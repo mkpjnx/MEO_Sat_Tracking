@@ -80,12 +80,12 @@ void setup()
   //GPS.sendCommand(PMTK_SET_NMEA_UPDATE_1HZ);
   //GPS.sendCommand(PMTK_API_SET_FIX_CTL_1HZ);
   // 5 Hz update rate- for 9600 baud you'll have to set the output to RMC or RMCGGA only (see above)
-  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ);
-  GPS.sendCommand(PMTK_API_SET_FIX_CTL_5HZ);
+  //GPS.sendCommand(PMTK_SET_NMEA_UPDATE_5HZ);
+  //GPS.sendCommand(PMTK_API_SET_FIX_CTL_5HZ);
   // 10 Hz update rate - for 9600 baud you'll have to set the output to RMC only (see above)
   // Note the position can only be updated at most 5 times a second so it will lag behind serial output.
-  //GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ);
-  //GPS.sendCommand(PMTK_API_SET_FIX_CTL_5HZ);
+  GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ);
+  GPS.sendCommand(PMTK_API_SET_FIX_CTL_5HZ);
 
   // Request updates on antenna status, comment out to keep quiet
   GPS.sendCommand(PGCMD_NOANTENNA);
