@@ -7,6 +7,8 @@ In order for it to work properly, there are a few settings you need to manipulat
 properly read all lines sent by the GPS without buffer
 3. Make sure to call the refresh() function of the GPS after every sampling iteration in your code
 in order to properly access the most recent information sent by the GPS
+4. You should only try to read data from the GPS if the fix state is True, but if for any reason the GPS sends
+strange data the class will return None for any missing values
 
 Initialization: GPS(port, baud)  -   initialize GPS with the serial port it is connected to and the 
  				     baudrate (you will probably want it to be 9600)
