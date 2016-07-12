@@ -21,6 +21,47 @@ missing values
 
 import serial
 import time
+import math
+
+def toDeg(x):
+    return x * 180 / math.pi
+
+def toRad(x):
+    return x * math.pi / 180
+
+def lenLatLon(lat): #Return length of one degree of latitude and longitude (in meters!!!) as a function of latitude
+    
+    #Constants for Fourier series approximation
+    a1 = 111132.92
+    a2 = -559.82
+    a3 = 1.175
+    a4 = -0.0023
+    b1 = 111412.84
+    b2 = -93.5
+    b3 = 0.118
+	
+    #Fourier seriers that approximates lengths of one degree of latitude and longitude
+    lat_len = a1 + (a2 * math.cos(2 * lat)) + (a3 * math.cos(4 * lat)) + (a4 * math.cos(6 * lat))
+    lon_len = (b1 * math.cos(lat)) + (b2 * math.cos(3 * lat)) + (b3 * math.cos(5 * lat))
+    
+    return lat_len, lon_len
+
+def bearingLL(lat1, lon1, lat2, lon2): #Return bearing of vector between two lat/lon points using linear approximation (In degrees E of N)
+    lat_len, lon_len = lenLatLon((lat1 + lat2) / 2) #Use average of two latitudes to approximate distance (Not very significant at smaller distances)
+
+    x = (lon2 - lon1) * lon_len
+    y = (lat2 - lat1) * lat_len
+
+    b = 90 - toDeg(math.atan2(y, x)) #Bearing in degrees East of North
+    return b
+    
+def distanceLL(lat1, lon1, lat2, lon2): #Return distance between two lat/lon points using linear approximation (In meters)
+    lat_len, lon_len = lenLatLon((lat1 + lat2) / 2)
+
+    x = (lon2 - lon1) * lon_len
+    y = (lat2 - lat1) * lat_len
+
+    return ((x * x) + (y * y)) ** .5 #Distance between points in meters
 
 
 class GPS:
