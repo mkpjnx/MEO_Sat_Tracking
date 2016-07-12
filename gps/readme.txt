@@ -10,6 +10,13 @@ in order to properly access the most recent information sent by the GPS
 4. You should only try to read data from the GPS if the fix state is True, but if for any reason the GPS sends
 strange data the class will return None for any missing values
 
+lenLatLon(lat)   -   Return length of one degree of latitude and longitude (in meters!!!) as a function of latitude
+bearingLL(lat1, lon1, lat2, lon2) -   Return bearing of vector between two lat/lon points 
+				      using linear approximation (In degrees E of N)
+distanceLL(lat1, lon1, lat2, lon2)-   Return distance between two lat/lon points using linear 
+				      approximation (In meters!!!)
+
+GPS Class:
 Initialization: GPS(port, baud)  -   initialize GPS with the serial port it is connected to and the 
  				     baudrate (you will probably want it to be 9600)
 Function calls:
