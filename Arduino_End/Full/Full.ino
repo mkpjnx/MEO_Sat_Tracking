@@ -115,6 +115,10 @@ SIGNAL(TIMER0_COMPA_vect) {
 
 char nmea[300] = "$";
 int index = 0;
+
+double x_total = 0.0;
+double y_total = 0.0;
+
 void loop()                     // run over and over again
 {
   char c = GPS.read();
@@ -128,11 +132,16 @@ void loop()                     // run over and over again
     nmea[index++] = c;
     nmea[index] = '\0';
   }
+  sensors_event_t event; 
+  mag.getEvent(&event);  
+  x_total += event.magnetic.x;
+  y_total += event.magnetic.y;
   
   if (c=='\n'){
-    sensors_event_t event; 
-    mag.getEvent(&event);
-    float heading = atan2(event.magnetic.y, event.magnetic.x);
+
+    float heading = atan2(y_total, x_total);
+    x_total = 0.0;
+    y_total = 0.0;
   
     // Correct for when signs are reversed.
     if(heading < 0)
