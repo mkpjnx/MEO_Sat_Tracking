@@ -50,7 +50,7 @@ Adafruit_HMC5883_Unified mag = Adafruit_HMC5883_Unified(12345);
 
 // Set GPSECHO to 'false' to turn off echoing the GPS data to the Serial console
 // Set to 'true' if you want to debug and listen to the raw GPS sentences
-#define GPSECHO  true
+#define GPSECHO  false
 
 // this keeps track of whether we're using the interrupt
 // off by default!
@@ -69,9 +69,9 @@ void setup()
   // uncomment this line to turn on RMC (recommended minimum) and GGA (fix data) including altitude
   //GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCGGA);
   // uncomment this line to turn on only the "minimum recommended" data for high update rates!
-  //GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
+  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_RMCONLY);
   // uncomment this line to turn on all the available data - for 9600 baud you'll want 1 Hz rate
-  GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_ALLDATA);
+  //GPS.sendCommand(PMTK_SET_NMEA_OUTPUT_ALLDATA);
   
   // Set the update rate
   // Note you must send both commands below to change both the output rate (how often the position
@@ -88,7 +88,7 @@ void setup()
   //GPS.sendCommand(PMTK_API_SET_FIX_CTL_5HZ);
 
   // Request updates on antenna status, comment out to keep quiet
-  GPS.sendCommand(PGCMD_ANTENNA);
+  GPS.sendCommand(PGCMD_NOANTENNA);
 
   // the nice thing about this code is you can have a timer0 interrupt go off
   // every 1 millisecond, and read data from the GPS for you. that makes the
@@ -104,14 +104,14 @@ void setup()
 }
 
 // Interrupt is called once a millisecond, looks for any new GPS data, and stores it
-SIGNAL(TIMER0_COMPA_vect) {
+/*SIGNAL(TIMER0_COMPA_vect) {
   char c = GPS.read();
   // if you want to debug, this is a good time to do it!
   if (GPSECHO)
     if (c) UDR0 = c;  
     // writing direct to UDR0 is much much faster than Serial.print 
     // but only one character can be written at a time. 
-}
+}*/
 
 char nmea[300] = "$";
 int index = 0;
