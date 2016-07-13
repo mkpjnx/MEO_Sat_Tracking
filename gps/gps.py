@@ -91,7 +91,10 @@ class GPS:
         time.sleep(5)
         self.ser.reset_input_buffer()  # Clear out initial junk lines
 
-        self.info = str(self.ser.readline())[2:].split(',')
+        self.unparsed = str(self.ser.readline())[2:]
+        #Clean out junk characters and newlines
+        self.unparsed = self.unparsed.replace('\r', '').replace('\n', '')
+        self.info = self.unparsed.split(',')
 
     def refresh(self):
         """Read most recent line sent by GPS into a list.
@@ -103,10 +106,8 @@ class GPS:
     def is_fixed(self):
         """Check fix state of GPS and return True/False."""
         try:
-            self.info.index('A')
-            return True
-
-        except ValueError:
+            return self.info[2] == 'A'
+        except:
             return False
 
     def get_lat(self):
@@ -212,3 +213,11 @@ class GPS:
 
         except IndexError:
             return None
+    def checksum(self):
+            a = 0
+            tocheck = self.unparsed[1:self.unparsed.index('*')]
+            for s in tocheck:
+                a ^= ord(s)
+            print(self.unparsed.split('*')[1])
+            print(str(hex(a)))
+            return str(hex(a))[2:] == self.unparsed.split('*')[1]
