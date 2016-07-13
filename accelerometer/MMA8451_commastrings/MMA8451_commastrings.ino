@@ -49,6 +49,6 @@ void loop() {
   /* Get the orientation of the sensor */
   uint8_t o = mma.getOrientation();
   Serial.println(o);
-  delay(1000);
+  delay(500);
   
 }
