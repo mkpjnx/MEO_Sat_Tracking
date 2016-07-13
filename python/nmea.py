@@ -130,8 +130,7 @@ class nmea:
         """Return date of latest fix as a formatted string (YYYY/MM/DD)."""
         try:
             if len(self.info[9]) == 6:
-                date_str = self.info[9]
-                # Format date to DD/MM/YY
+                date_str = self.info[9] #DDMMYY
                 return "20" + date_str[4:] + '/' + date_str[2:4] + '/' + date_str[0:2]
 
             else:
@@ -169,10 +168,10 @@ class nmea:
         Add this variation to your magnetic bearing to get true bearing.
         """
         try:
-            if self.info[11] == 'E':
+            if self.info[11][0] == 'E':
                 return -float(self.info[10])
 
-            elif self.info[11] == 'W':
+            elif self.info[11][0] == 'W':
                 return float(self.info[10])
 
             else:
@@ -182,10 +181,17 @@ class nmea:
             return None
 
     def checksum(self):
-        a = 0
-        tocheck = self.unparsed[1:self.unparsed.index('*')]
-        for s in tocheck:
-            a ^= ord(s)
-        print(self.unparsed.split('*')[1])
-        print(str(hex(a)))
-        return str(hex(a))[2:] == self.unparsed.split('*')[1]
+        try:
+            a = 0
+            tocheck = self.unparsed[1:self.unparsed.index('*')]
+            for s in tocheck:
+                a ^= ord(s)
+            return str(hex(a))[2:] == self.info[11][2:]
+        except:
+            return False
+
+    def get_magnetic_heading(self):
+        try:
+            return float(self.info[12])
+        except:
+            return None
