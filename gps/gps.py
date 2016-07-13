@@ -84,11 +84,8 @@ class GPS:
     information
     """
 
-    def __init__(self, port, baud):
-        """Initialize with the serial port and the baudrate.
-
-        (you will probably want baudrate to be 9600)
-        """
+    def __init__(self, port, baud=9600):
+        """Initialize with the serial port and the baudrate."""
         self.ser = serial.Serial(port, baud)
 
         time.sleep(5)
