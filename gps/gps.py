@@ -85,14 +85,18 @@ class GPS:
     """
 
     def __init__(self, port, baud=9600):
-        """Initialize with the serial port and the baudrate."""
+        """Initialize with the serial port and the baudrate.
+
+        The function will wait 5 seconds and clear out the initialization
+        lines and then store the unparsed data and the info.
+        """
         self.ser = serial.Serial(port, baud)
 
         time.sleep(5)
         self.ser.reset_input_buffer()  # Clear out initial junk lines
 
         self.unparsed = str(self.ser.readline())[2:]
-        #Clean out junk characters and newlines
+        # Clean out junk characters and newlines
         self.unparsed = self.unparsed.replace('\r', '').replace('\n', '')
         self.info = self.unparsed.split(',')
 
@@ -213,11 +217,13 @@ class GPS:
 
         except IndexError:
             return None
+
     def checksum(self):
-            a = 0
-            tocheck = self.unparsed[1:self.unparsed.index('*')]
-            for s in tocheck:
-                a ^= ord(s)
-            print(self.unparsed.split('*')[1])
-            print(str(hex(a)))
-            return str(hex(a))[2:] == self.unparsed.split('*')[1]
+        """Checksum the unparsed data to check for integrity."""
+        a = 0
+        tocheck = self.unparsed[1:self.unparsed.index('*')]
+        for s in tocheck:
+            a ^= ord(s)
+        print(self.unparsed.split('*')[1])
+        print(str(hex(a)))
+        return str(hex(a))[2:] == self.unparsed.split('*')[1]
