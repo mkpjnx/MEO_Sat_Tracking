@@ -92,7 +92,7 @@ class GPS:
         self.ser = serial.Serial(port, baud)
 
         time.sleep(5)
-        self.ser.flushInput()  # Clear out initial junk lines
+        self.ser.reset_input_buffer()  # Clear out initial junk lines
 
         self.info = str(self.ser.readline())[2:].split(',')
 
