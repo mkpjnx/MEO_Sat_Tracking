@@ -23,6 +23,20 @@ import serial
 import time
 import math
 
+def format_date(d):
+    """Convert the DDMMYY date format returned by the gps to
+       a YYYY/MM/DD format that is compatible with pyephem
+    """
+    y = d[4:6]
+
+    if float(y) > 70:
+        y = '19' + y
+
+    else:
+        y = '20' + y
+
+    return '%s/%s/%s' % (y, d[2:4], d[0:2])
+    
 
 def len_lat_lon(lat):
     """Return length of one degree of latitude and longitude.
@@ -162,12 +176,11 @@ class GPS:
             return None
 
     def get_date(self):
-        """Return date of latest fix as a formatted string (DD/MM/YY)."""
+        """Return date of latest fix as a formatted string (YYYY/MM/DD)."""
         try:
             if len(self.info[9]) == 6:
-                date_str = self.info[9]
-                # Format date to DD/MM/YY
-                return date_str[0:2] + '/' + date_str[2:4] + '/' + date_str[4:]
+                # Format date to YYYY/MM/DD (Compatible with pyephem)
+                return format_date(self.info[9])
 
             else:
                 return None
