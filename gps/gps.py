@@ -37,7 +37,9 @@ def len_lat_lon(lat):
     b1 = 111412.84
     b2 = -93.5
     b3 = 0.118
-
+    
+    lat = math.radians(lat)
+    
     # Fourier seriers that approximates lengths of one degree of lat and long
     lat_len = (a1 + (a2 * math.cos(2 * lat)) +
                (a3 * math.cos(4 * lat)) + (a4 * math.cos(6 * lat)))
