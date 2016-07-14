@@ -23,9 +23,12 @@ import serial
 import time
 import math
 
+
 def format_date(d):
-    """Convert the DDMMYY date format returned by the gps to
-       a YYYY/MM/DD format that is compatible with pyephem
+    """Convert the DDMMYY date format to YYYY/MM/DD format.
+
+    The DDMMYY is returned from the GPS and converted to a format usable by
+    PyEphem.
     """
     y = d[4:6]
 
@@ -36,7 +39,7 @@ def format_date(d):
         y = '20' + y
 
     return '%s/%s/%s' % (y, d[2:4], d[0:2])
-    
+
 
 def len_lat_lon(lat):
     """Return length of one degree of latitude and longitude.
@@ -51,9 +54,9 @@ def len_lat_lon(lat):
     b1 = 111412.84
     b2 = -93.5
     b3 = 0.118
-    
+
     lat = math.radians(lat)
-    
+
     # Fourier seriers that approximates lengths of one degree of lat and long
     lat_len = (a1 + (a2 * math.cos(2 * lat)) +
                (a3 * math.cos(4 * lat)) + (a4 * math.cos(6 * lat)))
@@ -64,7 +67,7 @@ def len_lat_lon(lat):
 
 
 def bearing_ll(lat1, lon1, lat2, lon2):
-    """Return bearing of vector between two lat/lon points. (In degrees E of N)
+    """Return bearing of vector between two lat/lon points (in degrees E of N).
 
     Uses linear approximation.
     """
@@ -108,7 +111,7 @@ class GPS:
         self.ser.reset_input_buffer()  # Clear out initial junk lines
 
         self.unparsed = str(self.ser.readline())[2:]
-        #Clean out junk characters and newlines
+        # Clean out junk characters and newlines
         self.unparsed = self.unparsed.replace('\r', '').replace('\n', '')
         self.info = self.unparsed.split(',')
 
@@ -228,12 +231,13 @@ class GPS:
 
         except IndexError:
             return None
-        
+
     def checksum(self):
-            a = 0
-            tocheck = self.unparsed[1:self.unparsed.index('*')]
-            for s in tocheck:
-                a ^= ord(s)
-            print(self.unparsed.split('*')[1])
-            print(str(hex(a)))
-            return str(hex(a))[2:] == self.unparsed.split('*')[1]
+        """Checksum the NMEA sentence to test integrity."""
+        a = 0
+        tocheck = self.unparsed[1:self.unparsed.index('*')]
+        for s in tocheck:
+            a ^= ord(s)
+        print(self.unparsed.split('*')[1])
+        print(str(hex(a)))
+        return str(hex(a))[2:] == self.unparsed.split('*')[1]
