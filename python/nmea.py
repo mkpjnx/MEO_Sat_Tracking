@@ -7,6 +7,20 @@ import time
 import math
 import ephem
 
+def format_date(d):
+    """Convert the DDMMYY date format returned by the gps to
+       a YYYY/MM/DD format that is compatible with pyephem
+    """
+    y = d[4:6]
+
+    if float(y) > 70:
+        y = '19' + y
+
+    else:
+        y = '20' + y
+
+    return '%s/%s/%s' % (y, d[2:4], d[0:2])
+    
 
 def len_lat_lon(lat):
     """Return length of one degree of latitude and longitude.
@@ -20,7 +34,9 @@ def len_lat_lon(lat):
     b1 = 111412.84
     b2 = -93.5
     b3 = 0.118
-
+    
+    lat = math.radians(lat)
+    
     # Fourier seriers that approximates lengths of one degree of lat and long
     lat_len = (a1 + (a2 * math.cos(2 * lat)) +
                (a3 * math.cos(4 * lat)) + (a4 * math.cos(6 * lat)))
@@ -30,9 +46,9 @@ def len_lat_lon(lat):
 
 
 def bearing_ll(lat1, lon1, lat2, lon2):
-    """Return bearing of vector between two lat/lon points.
+    """Return bearing of vector between two lat/lon points. (In degrees E of N)
 
-    Uses linear approximation (In degrees E of N).
+    Uses linear approximation.
     """
     # Use average of two latitudes to approximate distance
     # (Not very significant at smaller distances)
@@ -126,8 +142,13 @@ class nmea:
         """Return date of latest fix as a formatted string (YYYY/MM/DD)."""
         try:
             if len(self.info[9]) == 6:
+<<<<<<< HEAD:python/nmea.py
                 date_str = self.info[9] #DDMMYY
                 return "20" + date_str[4:] + '/' + date_str[2:4] + '/' + date_str[0:2]
+=======
+                # Format date to YYYY/MM/DD (Compatible with pyephem)
+                return format_date(self.info[9])
+>>>>>>> master:gps/gps.py
 
             else:
                 return None
@@ -175,7 +196,11 @@ class nmea:
 
         except IndexError:
             return None
+<<<<<<< HEAD:python/nmea.py
 
+=======
+        
+>>>>>>> master:gps/gps.py
     def checksum(self):
         try:
             a = 0
