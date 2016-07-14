@@ -14,6 +14,9 @@ sleep_on_unwind = 45.0
 default_lat = '-88.787'
 default_lon = '41.355'
 
+mount_port = '/dev/ttyUSB0'
+arduino_port = '/dev/ttyUSB1'
+
 class SerialTester:
     def write(self,line):
         print(line)
@@ -75,9 +78,9 @@ def update(nmea):
         if nmea.is_fixed() and nmea.checksum():
             datetime = nmea.get_date() + " " + nmea.get_time()
             obs.date = datetime
-            obs.lat = str(nmea.get_lat)
-            obs.lon = str(nmea.get_lon)
-            true_heading = nmea.get_magnetic_heading + nmea.get_magnetic_var
+            obs.lat = str(nmea.get_lat())
+            obs.lon = str(nmea.get_lon())
+            true_heading = nmea.get_magnetic_heading() + nmea.get_magnetic_var()
             return obs, true_heading
         else:
             return reset(), 0.0
@@ -87,8 +90,7 @@ def update(nmea):
 
 def setup_serial(port, baud):
     # Set Serial Port - USB0
-    ser = serial.Serial(port, baud, timeout=1)
-    print('Current Port Used is ' + ser.name)
+    ser = SerialTester()
     return ser
 #    return SerialTester()
 
@@ -118,26 +120,17 @@ def read_nmea(port):
         line = ""
     return line
 
-home = reset()
-ser = setup_serial('/dev/ttyUSB0', 9600)
-ard = setup_serial('/dev/ttyUSB1', 115200)
-icof2 = setup_satellite()
-antenna = Antenna()
-heading = 0.0
-counter = time.time()
-while True:
-    mes = nmea.nmea(read_nmea(ard))
-    home, heading = update()
-    # home.date = "2016-06-28 12:00:00"
-    icof2_az, icof2_alt = get_sat_position(icof2, home)
+def nmea_tester(sentence):
+    mes = nmea.nmea(sentence)
+    print("Checksum: ")
+    print(mes.checksum())
+    print("Reformatted Date & Time: ")
+    print(mes.get_date())
+    print(mes.get_time())
+    print("Lat, Lon: ")
+    print(str(mes.get_lat()) + ", " + str(mes.get_lon()))
+    print("Heading, MagVar")
+    print(str(mes.get_magnetic_heading()) + ", " + str(mes.get_magnetic_var()))
 
-        # Operate the antenna if the satellite's elevation is greater than 10
-        # degrees
-        # If the elevation IS above 10 degrees and the antenna is parked, then
-        # unlatch the park_latch variable
-    if time.time()-counter >= sleep_time:
-        if (icof2_alt >= min_elevation):
-            antenna.move(icof2_az - heading, icof2_alt)
-        else:
-            antenna.park()
-        counter = time.time()
+sentence = "$GPRMC,081836,A,3751.65,S,14507.36,E,000.0,360.0,130998,011.3,E*62,131.76"
+nmea_tester(sentence)

@@ -115,14 +115,10 @@ class nmea:
         (HH:MM:SS.SSS)
         """
         try:
-            if len(self.info[1]) == 10:
-                time_str = self.info[1]
-                # Format time to HH:MM:SS.SSS
-                return time_str[0:2] + ':' + time_str[2:4] + ':' + time_str[4:]
-
-            else:
-                return None
-
+            time_str = self.info[1]
+            # Format time to HH:MM:SS.SSS
+            return time_str[0:2] + ':' + time_str[2:4] + ':' + time_str[4:]
+            
         except IndexError:
             return None
 
