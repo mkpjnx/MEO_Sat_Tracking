@@ -15,7 +15,7 @@ default_lat = '-88.787'
 default_lon = '41.355'
 
 mount_port = '/dev/ttyUSB0'
-arduino_port = '/dev/ttyUSB1'
+arduino_port = '/dev/ttyACM0'
 
 class SerialTester:
     def write(self,line):
@@ -83,14 +83,17 @@ def update(nmea):
             true_heading = nmea.get_magnetic_heading() + nmea.get_magnetic_var()
             return obs, true_heading
         else:
+            print("GPS Fix Not Found: using default location...")
             return reset(), 0.0
     except:
+        print("GPS Fix Not Found: using default location...")
         return reset(), 0.0
 
 
 def setup_serial(port, baud):
     # Set Serial Port - USB0
-    ser = SerialTester()
+    ser = serial.Serial(port, baud, timeout=1)
+    print("Current Port Used is " + ser.name)
     return ser
 #    return SerialTester()
 
@@ -108,14 +111,15 @@ def get_sat_position(icof2, home):
     icof2.compute(home)
     icof2_az = to_degrees(icof2.az)
     icof2_alt = to_degrees(icof2.alt)
-    print('Current Satellite Location: Azimuth %3.2f deg, Altitude %3.2f deg' % (icof2_az, icof2_alt))
+    print('Current Satellite Location: Azimuth %3.2f deg, \
+    Altitude %3.2f deg' % (icof2_az, icof2_alt))
     return icof2_az, icof2_alt
 
 def read_nmea(port):
     port.flushInput()
     port.readline()
     try:
-        line = ser.readline().decode("ascii").replace('\r', '').replace('\n', '')
+        line = port.readline().decode("ascii").replace('\r', '').replace('\n', '')
     except:
         line = ""
     return line
