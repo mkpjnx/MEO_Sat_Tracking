@@ -20,11 +20,16 @@ and 3 is fully calibrated. To calibrate each sensor, perform the following:
     MAG:
         Move the 9-axis in a figure-eight/infinity motion and it will
         calibrate.
+Example:
+    test = NineAxis('COM3')
+    while True:
+        test.refresh()
+        print(test.info)
+        time.sleep(.1)
 
 """
 
 import serial
-import time
 
 
 class NineAxis:
@@ -47,9 +52,3 @@ class NineAxis:
         self.info = str(self.ser.readline())[2:-5].split(',')
         (self.x, self.y, self.z, self.sys_cal, self.gyro_cal, self.accel_cal,
             self.mag_cal) = self.info
-
-test = NineAxis('COM3')
-while True:
-    test.refresh()
-    print(test.info)
-    time.sleep(.1)
