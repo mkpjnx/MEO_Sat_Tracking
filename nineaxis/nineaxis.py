@@ -68,6 +68,6 @@ class NineAxisData:
         try:
             self.info = [float(x) for x in self.info]
         except ValueError:
-            self.floatinfo = [0, 0, 0, 0, 0, 0, 0]
+            self.info = [0, 0, 0, 0, 0, 0, 0]
         (self.x, self.y, self.z, self.sys_cal, self.gyro_cal,
          self.accel_cal, self.mag_cal) = self.info
