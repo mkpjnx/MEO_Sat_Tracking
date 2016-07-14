@@ -20,22 +20,16 @@ and 3 is fully calibrated. To calibrate each sensor, perform the following:
     MAG:
         Move the 9-axis in a figure-eight/infinity motion and it will
         calibrate.
-Example:
-    test = NineAxis('COM3')
-    while True:
-        test.refresh()
-        print(test.info)
-        time.sleep(.1)
-This makes a NineAxis object and reads the data at 10 Hz and prints it.
 """
 
 import serial
+import time
 
 
 class NineAxis:
     """9-Axis Absolute Orientation class.
 
-    The 9-axis writes to the serial port with a comma delimited string
+    NineAxis reads from the serial port a comma delimited string
     in the following format:
         x, y, z, sys_cal, gyro_cal, accel_cal, mag_cal
     """
@@ -43,16 +37,37 @@ class NineAxis:
     def __init__(self, port, baud=9600):
         """Constructor method, initialize with port and baudrate."""
         self.ser = serial.Serial(port, baud)
+        time.sleep(5)
         self.ser.reset_input_buffer()
         # Split out the escape characters and the byte formatter
-        self.info = str(self.ser.readline())[2:-5].split(',')
+        self.refresh()
 
     def refresh(self):
         """Read from serial and format."""
-        self.info = str(self.ser.readline())[2:-5].split(',')
+        self.data = NineAxisData(self.read_nineaxis())
+
+    def read_nineaxis(self):
+        """Return a list of strings read from the serial.
+
+        It slices out the control characters at the beginning and end of the
+        string and splits it by commas.
+        """
+        return str(self.ser.readline())[2:-5].split(',')
+
+
+class NineAxisData:
+    """NineAxisData has all the information from the sensor.
+
+    It recieves a list of data and unpacks it into x, y, z, sys_cal, gyro_cal,
+    accel_cal, and mag_cal.
+    """
+
+    def __init__(self, info):
+        """Take info and store it into instance variables."""
+        self.info = info
         try:
-            self.floatinfo = [float(x) for x in self.info]
-            (self.x, self.y, self.z, self.sys_cal, self.gyro_cal,
-             self.accel_cal, self.mag_cal) = self.floatinfo
+            self.info = [float(x) for x in self.info]
         except ValueError:
-            pass
+            self.floatinfo = [0, 0, 0, 0, 0, 0, 0]
+        (self.x, self.y, self.z, self.sys_cal, self.gyro_cal,
+         self.accel_cal, self.mag_cal) = self.info
