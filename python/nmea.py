@@ -20,7 +20,7 @@ def format_date(d):
         y = '20' + y
 
     return '%s/%s/%s' % (y, d[2:4], d[0:2])
-    
+
 
 def len_lat_lon(lat):
     """Return length of one degree of latitude and longitude.
@@ -34,9 +34,9 @@ def len_lat_lon(lat):
     b1 = 111412.84
     b2 = -93.5
     b3 = 0.118
-    
+
     lat = math.radians(lat)
-    
+
     # Fourier seriers that approximates lengths of one degree of lat and long
     lat_len = (a1 + (a2 * math.cos(2 * lat)) +
                (a3 * math.cos(4 * lat)) + (a4 * math.cos(6 * lat)))
@@ -134,7 +134,7 @@ class nmea:
             time_str = self.info[1]
             # Format time to HH:MM:SS.SSS
             return time_str[0:2] + ':' + time_str[2:4] + ':' + time_str[4:]
-            
+
         except IndexError:
             return None
 
@@ -142,13 +142,8 @@ class nmea:
         """Return date of latest fix as a formatted string (YYYY/MM/DD)."""
         try:
             if len(self.info[9]) == 6:
-<<<<<<< HEAD:python/nmea.py
-                date_str = self.info[9] #DDMMYY
-                return "20" + date_str[4:] + '/' + date_str[2:4] + '/' + date_str[0:2]
-=======
                 # Format date to YYYY/MM/DD (Compatible with pyephem)
                 return format_date(self.info[9])
->>>>>>> master:gps/gps.py
 
             else:
                 return None
@@ -196,11 +191,7 @@ class nmea:
 
         except IndexError:
             return None
-<<<<<<< HEAD:python/nmea.py
 
-=======
-        
->>>>>>> master:gps/gps.py
     def checksum(self):
         try:
             a = 0
