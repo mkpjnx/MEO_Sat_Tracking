@@ -48,9 +48,9 @@ def len_lat_lon(lat):
 
 
 def bearing_ll(lat1, lon1, lat2, lon2):
-    """Return bearing of vector between two lat/lon points.
+    """Return bearing of vector between two lat/lon points. (In degrees E of N)
 
-    Uses linear approximation (In degrees E of N).
+    Uses linear approximation.
     """
     # Use average of two latitudes to approximate distance
     # (Not very significant at smaller distances)
@@ -213,6 +213,7 @@ class GPS:
 
         except IndexError:
             return None
+        
     def checksum(self):
             a = 0
             tocheck = self.unparsed[1:self.unparsed.index('*')]
