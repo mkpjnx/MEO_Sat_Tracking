@@ -134,7 +134,7 @@ class nmea:
             time_str = self.info[1]
             # Format time to HH:MM:SS.SSS
             return time_str[0:2] + ':' + time_str[2:4] + ':' + time_str[4:]
-
+            
         except IndexError:
             return None
 
@@ -216,6 +216,3 @@ class nmea:
             return float(self.info[12])
         except:
             return None
-
-    def __str__(self):
-        return self.unparsed

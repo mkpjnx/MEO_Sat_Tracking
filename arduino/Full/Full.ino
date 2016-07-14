@@ -33,13 +33,28 @@
 
 // If using software serial, keep these lines enabled
 // (you can change the pin numbers to match your wiring):
-SoftwareSerial mySerial(8, 7);
+#if ARDUINO >= 100
+  SoftwareSerial mySerial(8, 7);
+#else
+  NewSoftSerial mySerial(3, 2);
+#endif
 Adafruit_GPS GPS(&mySerial);
 Adafruit_HMC5883_Unified mag = Adafruit_HMC5883_Unified(12345);
+// If using hardware serial (e.g. Arduino Mega), comment
+// out the above six lines and enable this line instead:
+//Adafruit_GPS GPS(&Serial1);
+
+
+
+
 
 // Set GPSECHO to 'false' to turn off echoing the GPS data to the Serial console
 // Set to 'true' if you want to debug and listen to the raw GPS sentences
 #define GPSECHO  false
+
+// this keeps track of whether we're using the interrupt
+// off by default!
+boolean usingInterrupt = false;
 
 void setup()  
 {    
@@ -71,10 +86,14 @@ void setup()
   // Note the position can only be updated at most 5 times a second so it will lag behind serial output.
   GPS.sendCommand(PMTK_SET_NMEA_UPDATE_10HZ);
   GPS.sendCommand(PMTK_API_SET_FIX_CTL_5HZ);
-  
-  // Request updates on antenna status
+
+  // Request updates on antenna status, comment out to keep quiet
   GPS.sendCommand(PGCMD_NOANTENNA);
-  
+
+  // the nice thing about this code is you can have a timer0 interrupt go off
+  // every 1 millisecond, and read data from the GPS for you. that makes the
+  // loop code a heck of a lot easier!
+ // useInterrupt(false);
   if(!mag.begin())
   {
     /* There was a problem detecting the HMC5883 ... check your connections */
@@ -84,6 +103,7 @@ void setup()
   delay(500);
 }
 
+// Interrupt is called once a millisecond, looks for any new GPS data, and stores it
 /*SIGNAL(TIMER0_COMPA_vect) {
   char c = GPS.read();
   // if you want to debug, this is a good time to do it!
@@ -93,7 +113,7 @@ void setup()
     // but only one character can be written at a time. 
 }*/
 
-char nmea[300];
+char nmea[300] = "$";
 int index = 0;
 
 double x_total = 0.0;
