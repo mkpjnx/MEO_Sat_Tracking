@@ -17,6 +17,9 @@ sent by the GPS
 4. You should only try to read data from the GPS if the fix state is True, but
 if for any reason the GPS sends strange data the class will return None for any
 missing values
+
+Sources:
+http://www.csgnetwork.com/degreelenllavcalc.html <-- For distance of lat/lon calculator
 """
 
 import serial
@@ -45,6 +48,8 @@ def len_lat_lon(lat):
     """Return length of one degree of latitude and longitude.
 
     The lengths are a function of latitude.
+
+    Equation taken from http://www.csgnetwork.com/degreelenllavcalc.html
     """
     # Constants for Fourier series approximation
     a1 = 111132.92
