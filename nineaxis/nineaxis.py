@@ -26,7 +26,7 @@ Example:
         test.refresh()
         print(test.info)
         time.sleep(.1)
-
+This makes a NineAxis object and reads the data at 10 Hz and prints it.
 """
 
 import serial
@@ -50,5 +50,9 @@ class NineAxis:
     def refresh(self):
         """Read from serial and format."""
         self.info = str(self.ser.readline())[2:-5].split(',')
-        (self.x, self.y, self.z, self.sys_cal, self.gyro_cal, self.accel_cal,
-            self.mag_cal) = self.info
+        try:
+            self.floatinfo = [float(x) for x in self.info]
+            (self.x, self.y, self.z, self.sys_cal, self.gyro_cal,
+             self.accel_cal, self.mag_cal) = self.floatinfo
+        except ValueError:
+            pass
