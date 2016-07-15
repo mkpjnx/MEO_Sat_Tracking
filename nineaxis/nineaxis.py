@@ -44,7 +44,13 @@ class NineAxis:
 
     def refresh(self):
         """Read from serial and format."""
-        self.data = NineAxisData(self.read_nineaxis())
+        self.info = self.read_nineaxis()
+        try:
+            self.info = [float(x) for x in self.info]
+        except ValueError:
+            self.info = [0, 0, 0, 0, 0, 0, 0]
+        (self.x, self.y, self.z, self.sys_cal, self.gyro_cal,
+         self.accel_cal, self.mag_cal) = self.info
 
     def read_nineaxis(self):
         """Return a list of strings read from the serial.
@@ -55,19 +61,5 @@ class NineAxis:
         return str(self.ser.readline())[2:-5].split(',')
 
 
-class NineAxisData:
-    """NineAxisData has all the information from the sensor.
-
-    It recieves a list of data and unpacks it into x, y, z, sys_cal, gyro_cal,
-    accel_cal, and mag_cal.
-    """
-
-    def __init__(self, info):
-        """Take info and store it into instance variables."""
-        self.info = info
-        try:
-            self.info = [float(x) for x in self.info]
-        except ValueError:
-            self.info = [0, 0, 0, 0, 0, 0, 0]
-        (self.x, self.y, self.z, self.sys_cal, self.gyro_cal,
-         self.accel_cal, self.mag_cal) = self.info
+test = NineAxis("COM3")
+print(test.info)
