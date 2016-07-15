@@ -59,7 +59,3 @@ class NineAxis:
         string and splits it by commas.
         """
         return str(self.ser.readline())[2:-5].split(',')
-
-
-test = NineAxis("COM3")
-print(test.info)
