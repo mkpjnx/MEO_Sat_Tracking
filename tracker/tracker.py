@@ -264,9 +264,3 @@ class Tracker:
         print(self.unparsed.split('*')[1])
         print(str(hex(a)))
         return str(hex(a))[2:] == self.unparsed.split('*')[1]
-
-test = Tracker("COM4", 115200)
-
-while True:
-    test.refresh()
-    print(test.info)
