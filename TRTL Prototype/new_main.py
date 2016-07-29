@@ -96,7 +96,8 @@ def main():
                 print('No fix')
                 coord, calc_bearings, comp_bearings = initialize(tracker, dist_threshold)
     except KeyboardInterrupt:
-        pass
+        print("Loop interrupted")
     data.close()
 
 main()
+input("End of loop")
