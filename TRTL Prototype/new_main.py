@@ -49,7 +49,7 @@ def rotate_check(comp_bearings, rotate_threshold):
         return False
 
 def main():
-    tracker = track.Tracker('COM3', 115200)
+    tracker = track.Tracker(input("Port: "), 115200)
     dist_threshold = 3 #Threshold for significant linear movement in meters
     rotate_threshold = 4 #Threshold for signicant rotational movement in degrees
     print('pass 1')
