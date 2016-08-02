@@ -1,10 +1,7 @@
 from header import *  # NOQA
 import tracker as track
 from time import sleep
-<<<<<<< HEAD
-=======
 
->>>>>>> origin/master
 
 def fix(tracker):
     """Continously attempt to get a fix on the tracker."""
@@ -71,22 +68,6 @@ def initialize(tracker, dist_threshold):
 
     return coords, calc_bearings, comp_bearings
 
-<<<<<<< HEAD
-def drift_check(coords, calc_bearings, comp_bearings, rotate_threshold):
-    return abs((coords.get_current_bearing() - calc_bearings.b[0]) - abs(comp_bearings.delta_bearing())) > rotate_threshold
-
-def rotate_check(comp_bearings, rotate_threshold):
-    return abs(comp_bearings.delta_bearing()) > rotate_threshold
-
-def main():
-    tracker = track.Tracker('COM3', 1.1, 115200)
-    dist_threshold = 3 #Threshold for significant linear movement in meters
-    rotate_threshold = 4 #Threshold for signicant rotational movement in degrees
-    coords, calc_bearings, comp_bearings = initialize(tracker, dist_threshold)
-
-    data = open('log.txt', 'w')
-=======
-
 def main():
     """."""
     tracker = track.Tracker(input("Port: "), 115200, True)
@@ -95,51 +76,11 @@ def main():
     print('pass 1')
     coords, calc_bearings, comp_bearings = initialize(tracker, dist_threshold)
     print('pass 2')
->>>>>>> origin/master
+
     try:
         while True:
             tracker.refresh()
             print(tracker.get_time())
-<<<<<<< HEAD
-
-            if tracker.is_fixed():
-                print('Fixed')
-                if type(tracker.get_lat()) is float and type(tracker.get_lon()) is float:
-                    coords.add_coords(tracker.get_lat(), tracker.get_lon())
-
-                if type(tracker.get_yaw()) is float:
-                    comp_bearings.add_bearing(tracker.get_yaw())
-                else:
-                    comp_bearings.lock()
-                try:
-                    if coords.get_dist_travelled() > dist_threshold:
-
-                        if drift_check(coords, calc_bearings, comp_bearings, rotate_threshold):
-                            calc_bearings.adjust_bearing(comp_bearings.delta_bearing())
-
-                        else:
-                            calc_bearings.add_bearing(coords.get_current_bearing())
-                except TypeError:
-                    pass
-
-                else:
-                    #coords.lock()
-                    if rotate_check(comp_bearings, rotate_threshold):
-                        calc_bearings.adjust_bearing(comp_bearings.delta_bearing())
-
-                    else:
-                        calc_bearings.lock()
-
-
-                data.write(str(tracker.get_time()) + ', ' + str(coords.lats[0]) + ', ' + str(coords.longs[0]) + ', ' + str(calc_bearings.b[0]) + '\n')
-
-            else:
-                print('No fix')
-                coord, calc_bearings, comp_bearings = initialize(tracker, dist_threshold)
-
-    except KeyboardInterrupt:
-        pass
-=======
 
             if tracker.is_fixed():
                 print('Fixed')
@@ -173,7 +114,6 @@ def main():
 
                     else:
                         calc_bearings.lock()
->>>>>>> origin/master
 
                 with open('log.txt', 'w') as data:
                     data.write(str(tracker.get_time()) + ', ' +
