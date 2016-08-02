@@ -194,8 +194,8 @@ def display_stats(orient, position, obs):
 home = reset()
 ard = setup_serial(arduino_port, 115200)
 counter = time.time()
-#f = open("log_"+str(float(ephem.now()))+".csv", 'w')
-#f.write("Time,Lat,Lon,Heading\n")
+f = open("logs/log_"+str(float(ephem.now()))+".csv", 'w')
+f.write("Epoch Time,Heading\n")
 orient = orientation.orientation("$IMU,0,0,0,0,0,0,0,0,0")
 position = nmea.nmea("$GPRMC,0,V,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0")
 while True:
@@ -220,26 +220,24 @@ while True:
     home.date = ephem.now()
 
     display_stats(orient, position, home)
-    '''
-    home = update_gps(nmea_sentence, home)
-    home.date = ephem.now()
-    print(mes)
-
-    f.write(str(ephem.now())+",")
-    f.write(str(float(home.lat)/ephem.degree)+",")
-    f.write(str(float(home.lon)/ephem.degree)+",")
-    try:
-        f.write(str(float(heading))+"\n")
-    except:
-        f.write("\n")
-
+    if time.time() - counter >= 1.0:
+        counter = time.time()
+        try:
+            heading = orient.get_heading()
+            f.write(str(ephem.now())+",")
+            f.write(str(float(ephem.now()))+",")
+            f.write(str(heading)+"\n")
+            f.flush()
+        except:
+            f.write("x\n")
+            f.flush()
 
 
 
-        icof2_az, icof2_alt = get_sat_position(icof2, home)
-        if (icof2_alt >= min_elevation):
-            antenna.set_position(icof2_az - heading, icof2_alt)
 
-        else:
-            antenna.park()
-        '''
+'''            icof2_az, icof2_alt = get_sat_position(icof2, home)
+            if (icof2_alt >= min_elevation):
+                antenna.set_position(icof2_az - heading, icof2_alt)
+
+            else:
+                antenna.park()'''
