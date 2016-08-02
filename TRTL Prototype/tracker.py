@@ -92,7 +92,6 @@ class Tracker:
 
     def refresh(self):
         """Return the string read from serial formatted as a list."""
-<<<<<<< HEAD
         unparsed = str(self.ser.readline())[2:]
         unparsed = unparsed.replace('\\r', '').replace('\\n', '')
 
@@ -107,24 +106,9 @@ class Tracker:
         """Check fix state of GPS and return True/False."""
         try:
             return self.info[2] == 'A'
-
         except:
             return False
-=======
-        self.unparsed = str(self.ser.readline())[2:]
-        self.unparsed = self.unparsed.replace('\\r', '').replace('\\n', '')
-        self.info = self.unparsed.split(',')
 
-    def is_fixed(self):
-        """Check fix state of GPS and return True/False."""
-        if self.spoof:
-            return True
-        else:
-            try:
-                return self.info[2] == 'A'
-            except:
-                return False
->>>>>>> origin/master
 
     def get_lat(self):
         """Get latitude in degrees as a float."""
