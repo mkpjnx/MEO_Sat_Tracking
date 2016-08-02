@@ -1,12 +1,12 @@
 from header import *
 import tracker as track
 from time import sleep
-from graphics import *
 
 def fix(tracker):
     while not tracker.is_fixed():
         tracker.refresh()
         print('Fixing')
+        print(tracker.info)
 
 def initialize(tracker, dist_threshold):
     fix(tracker)
@@ -36,69 +36,60 @@ def initialize(tracker, dist_threshold):
     return coords, calc_bearings, comp_bearings
 
 def drift_check(coords, calc_bearings, comp_bearings, rotate_threshold):
-    if abs((coords.get_current_bearing() - calc_bearings.b[0]) - abs(comp_bearings.delta_bearing())) > rotate_threshold:
-        return True
-
-    else:
-        return False
+    return abs((coords.get_current_bearing() - calc_bearings.b[0]) - abs(comp_bearings.delta_bearing())) > rotate_threshold
 
 def rotate_check(comp_bearings, rotate_threshold):
-    if abs(comp_bearings.delta_bearing()) > rotate_threshold:
-        return True
-
-    else:
-        return False
+    return abs(comp_bearings.delta_bearing()) > rotate_threshold
 
 def main():
-    tracker = track.Tracker('COM3', 115200)
-    win = GraphWin("click to end", 100, 100)
+    tracker = track.Tracker('COM3', 1.1, 115200)
     dist_threshold = 3 #Threshold for significant linear movement in meters
     rotate_threshold = 4 #Threshold for signicant rotational movement in degrees
-    print('pass 1')
     coords, calc_bearings, comp_bearings = initialize(tracker, dist_threshold)
-    print('pass 2')
+
     data = open('log.txt', 'w')
-    while True:
-        tracker.refresh()
-        print(tracker.get_time())
+    try:
+        while True:
+            tracker.refresh()
+            print(tracker.get_time())
 
-        if tracker.is_fixed():
-            print('Fixed')
-            if type(tracker.get_lat()) is float and type(tracker.get_lon()) is float:
-                coords.add_coords(tracker.get_lat(), tracker.get_lon())
-            
-            if type(tracker.get_yaw()) is float:
-                comp_bearings.add_bearing(tracker.get_yaw())
-            else:
-                comp_bearings.lock()
-            try:
-                if coords.get_dist_travelled() > dist_threshold:
+            if tracker.is_fixed():
+                print('Fixed')
+                if type(tracker.get_lat()) is float and type(tracker.get_lon()) is float:
+                    coords.add_coords(tracker.get_lat(), tracker.get_lon())
 
-                    if drift_check(coords, calc_bearings, comp_bearings, rotate_threshold):
+                if type(tracker.get_yaw()) is float:
+                    comp_bearings.add_bearing(tracker.get_yaw())
+                else:
+                    comp_bearings.lock()
+                try:
+                    if coords.get_dist_travelled() > dist_threshold:
+
+                        if drift_check(coords, calc_bearings, comp_bearings, rotate_threshold):
+                            calc_bearings.adjust_bearing(comp_bearings.delta_bearing())
+
+                        else:
+                            calc_bearings.add_bearing(coords.get_current_bearing())
+                except TypeError:
+                    pass
+
+                else:
+                    #coords.lock()
+                    if rotate_check(comp_bearings, rotate_threshold):
                         calc_bearings.adjust_bearing(comp_bearings.delta_bearing())
 
                     else:
-                        calc_bearings.add_bearing(coords.get_current_bearing())
-            except TypeError:
-                pass
+                        calc_bearings.lock()
+
+
+                data.write(str(tracker.get_time()) + ', ' + str(coords.lats[0]) + ', ' + str(coords.longs[0]) + ', ' + str(calc_bearings.b[0]) + '\n')
 
             else:
-                #coords.lock()
-                if rotate_check(comp_bearings, rotate_threshold):
-                    calc_bearings.adjust_bearing(comp_bearings.delta_bearing())
+                print('No fix')
+                coord, calc_bearings, comp_bearings = initialize(tracker, dist_threshold)
 
-                else:
-                    calc_bearings.lock()
-            
-
-            data.write(str(tracker.get_time()) + ', ' + str(coords.lats[0]) + ', ' + str(coords.longs[0]) + ', ' + str(calc_bearings.b[0]) + '\n')
-
-        else:
-            print('No fix')
-            coord, calc_bearings, comp_bearings = initialize(tracker, dist_threshold)
-
-        if win.checkMouse():
-            break
+    except KeyboardInterrupt:
+        pass
 
     data.close()
 

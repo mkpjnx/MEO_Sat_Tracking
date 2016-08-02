@@ -82,24 +82,31 @@ def distance_ll(lat1, lon1, lat2, lon2):
 class Tracker:
     """Read and parse serial data from GPS and 9DOF sensors."""
 
-    def __init__(self, port, baud=9600):
+    def __init__(self, port, timeout, baud=9600):
         """Initialize with the provided port and a default baud of 9600."""
-        self.ser = serial.Serial(port, baud)
+        self.ser = serial.Serial(port, baud, timeout = timeout)
         time.sleep(5)
         self.ser.reset_input_buffer()
         self.refresh()
+        self.info = ""
 
     def refresh(self):
         """Return the string read from serial formatted as a list."""
-        self.unparsed = str(self.ser.readline())[2:]
-        self.unparsed = self.unparsed.replace('\\r', '').replace('\\n', '')
+        unparsed = str(self.ser.readline())[2:]
+        unparsed = unparsed.replace('\\r', '').replace('\\n', '')
 
-        self.info = self.unparsed.split(',')
+        if len(unparsed.split(',')) < 20:
+            print("Timeout occured")
+            self.ser.reset_input_buffer()
+
+        else:
+            self.info = unparsed.split(',')
 
     def is_fixed(self):
         """Check fix state of GPS and return True/False."""
         try:
             return self.info[2] == 'A'
+
         except:
             return False
 
