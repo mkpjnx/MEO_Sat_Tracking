@@ -82,38 +82,24 @@ def distance_ll(lat1, lon1, lat2, lon2):
 class Tracker:
     """Read and parse serial data from GPS and 9DOF sensors."""
 
-    def __init__(self, port, timeout, baud=9600):
+    def __init__(self, port, baud=9600, spoof=False):
         """Initialize with the provided port and a default baud of 9600."""
-        self.ser = serial.Serial(port, baud, timeout = timeout)
-        time.sleep(5)
-        self.ser.reset_input_buffer()
+        self.spoof = spoof
+        if not self.spoof:
+            self.ser = serial.Serial(port, baud)
+            time.sleep(5)
+            self.ser.reset_input_buffer()
         self.refresh()
-        self.info = ""
 
     def refresh(self):
         """Return the string read from serial formatted as a list."""
-<<<<<<< HEAD
-        unparsed = str(self.ser.readline())[2:]
-        unparsed = unparsed.replace('\\r', '').replace('\\n', '')
-
-        if len(unparsed.split(',')) < 20:
-            print("Timeout occured")
-            self.ser.reset_input_buffer()
-
+        if self.spoof:
+            self.unparsed = "$GPRMC,201532.218,V,,,,,0.00,0.00,290716,,,N*4A,359.81,2.69,0.31,0,3,0,0"  # NOQA
+            self.info = self.unparsed.split(',')
         else:
-            self.info = unparsed.split(',')
-
-    def is_fixed(self):
-        """Check fix state of GPS and return True/False."""
-        try:
-            return self.info[2] == 'A'
-
-        except:
-            return False
-=======
-        self.unparsed = str(self.ser.readline())[2:]
-        self.unparsed = self.unparsed.replace('\\r', '').replace('\\n', '')
-        self.info = self.unparsed.split(',')
+            self.unparsed = str(self.ser.readline())[2:]
+            self.unparsed = self.unparsed.replace('\\r', '').replace('\\n', '')
+            self.info = self.unparsed.split(',')
 
     def is_fixed(self):
         """Check fix state of GPS and return True/False."""
@@ -124,7 +110,6 @@ class Tracker:
                 return self.info[2] == 'A'
             except:
                 return False
->>>>>>> origin/master
 
     def get_lat(self):
         """Get latitude in degrees as a float."""
