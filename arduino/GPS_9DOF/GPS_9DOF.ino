@@ -1,3 +1,4 @@
+
 // Test code for Adafruit GPS modules using MTK3329/MTK3339 driver
 //
 // This code just echos whatever is coming from the GPS unit to the
@@ -11,7 +12,7 @@
 
 #include <Wire.h>
 #include <Adafruit_Sensor.h>
-#include <Adafruit_HMC5883_U.h>
+#include <Adafruit_BNO055.h>
 #include <Adafruit_GPS.h>
 #if ARDUINO >= 100
  #include <SoftwareSerial.h>
@@ -39,13 +40,10 @@
   NewSoftSerial mySerial(3, 2);
 #endif
 Adafruit_GPS GPS(&mySerial);
-Adafruit_HMC5883_Unified mag = Adafruit_HMC5883_Unified(12345);
+Adafruit_BNO055 bno = Adafruit_BNO055(55);
 // If using hardware serial (e.g. Arduino Mega), comment
 // out the above six lines and enable this line instead:
 //Adafruit_GPS GPS(&Serial1);
-
-
-
 
 
 // Set GPSECHO to 'false' to turn off echoing the GPS data to the Serial console
@@ -94,10 +92,10 @@ void setup()
   // every 1 millisecond, and read data from the GPS for you. that makes the
   // loop code a heck of a lot easier!
  // useInterrupt(false);
-  if(!mag.begin())
+  if(!bno.begin())
   {
     /* There was a problem detecting the HMC5883 ... check your connections */
-    Serial.println("Ooops, no HMC5883 detected ... Check your wiring!");
+    Serial.println("Ooops, no BNO055 detected ... Check your wiring!");
     while(1);
   }
   delay(500);
@@ -116,24 +114,25 @@ void setup()
 //char nmea[300];
 //int index = 0;
 
-double x_total = 0.0;
-double y_total = 0.0;
-
 void loop()                     // run over and over again
 {
   sensors_event_t event; 
-  mag.getEvent(&event);  
-  x_total += event.magnetic.x;
-  y_total += event.magnetic.y;
-  
+  bno.getEvent(&event);  
+  uint8_t sys, gyro, accel, mag = 0;
+  bno.getCalibration(&sys, &gyro, &accel, &mag);
   char c = GPS.read();
   if ( c == '$'){
     //Serial.print(nmea);
-    Serial.print(",");
-    Serial.println(calc_heading(x_total, y_total));
+    Serial.print(":");
+    Serial.print((float)event.orientation.x); Serial.print(",");
+    Serial.print((float)event.orientation.y); Serial.print(",");
+    Serial.print((float)event.orientation.z); Serial.print(",");
+    
+    Serial.print(sys, DEC); Serial.print(",");
+    Serial.print(gyro, DEC); Serial.print(",");
+    Serial.print(accel, DEC); Serial.print(",");
+    Serial.println(mag, DEC);
     Serial.print("$");
-    x_total = 0.0;
-    y_total= 0.0;
     //index = 0;
     //nmea[0] = '\0';
   }
@@ -145,18 +144,3 @@ void loop()                     // run over and over again
   delay(1);
 }
 
-float calc_heading(double x, double y){
-  float heading = atan2(y, x);
-  
-    // Correct for when signs are reversed.
-    if(heading < 0)
-      heading += 2*PI;
-      
-    // Check for wrap due to addition of declination.
-    if(heading > 2*PI)
-      heading -= 2*PI;
-     
-    // Convert radians to degrees for readability.
-    float headingDegrees = heading * 180/M_PI;
-    return headingDegrees;
-}

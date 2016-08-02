@@ -2,20 +2,23 @@ import time
 import ephem
 import serial
 import nmea
+import orientation
+import sys
 
 #Constants
 initial_az = 180
 initial_alt = 90
 min_elevation = 10.0
-sleep_time = 15.0
+sleep_time = 1.0
 unwind_threshold = 180
 sleep_on_unwind = 45.0
 
-default_lat = '-88.787'
-default_lon = '41.355'
+last_lon = '-88.787'
+last_lat = '41.355'
+last_heading = 0.0
 
 mount_port = '/dev/ttyUSB0'
-arduino_port = '/dev/ttyUSB1'
+arduino_port = '/dev/ttyACM0'
 
 class SerialTester:
     def write(self,line):
@@ -66,31 +69,31 @@ class Antenna:
 def reset():
     obs = ephem.Observer()
     #Set LAT/LON Coordinates to IMSA's location
-    home.date = ephem.now()
-    home.lon = default_lon
-    home.lat = default_lat
-    home.elevation = 0.0
+    obs.date = ephem.now()
+    obs.lon = last_lon
+    obs.lat = last_lat
+    obs.elevation = 0.0
     return obs
 
-def update(nmea):
-    obs = ephem.Observer()
+def update_gps(gprmc, obs):
+    obsc = obs.copy()
     try:
-        if nmea.is_fixed() and nmea.checksum():
-            datetime = nmea.get_date() + " " + nmea.get_time()
-            obs.date = datetime
-            obs.lat = str(nmea.get_lat())
-            obs.lon = str(nmea.get_lon())
-            true_heading = nmea.get_magnetic_heading() + nmea.get_magnetic_var()
-            return obs, true_heading
-        else:
-            return reset(), 0.0
+        if gprmc.is_fixed() and gprmc.checksum():
+            datetime = gprmc.get_date() + " " + gprmc.get_time()
+            obsc.date = datetime
+            obsc.lat = str(gprmc.get_lat())
+            last_lat = str(gprmc.get_lat())
+            obsc.lon = str(gprmc.get_lon())
+            last_lon = str(gprmc.get_lon())
+        return obsc
     except:
-        return reset(), 0.0
+        return obs
 
 
 def setup_serial(port, baud):
     # Set Serial Port - USB0
-    ser = SerialTester()
+    ser = serial.Serial(port, baud)
+    print("Port used:" + ser.name)
     return ser
 #    return SerialTester()
 
@@ -111,14 +114,14 @@ def get_sat_position(icof2, home):
     print('Current Satellite Location: Azimuth %3.2f deg, Altitude %3.2f deg' % (icof2_az, icof2_alt))
     return icof2_az, icof2_alt
 
-def read_nmea(port):
-    port.flushInput()
-    port.readline()
-    try:
-        line = ser.readline().decode("ascii").replace('\r', '').replace('\n', '')
-    except:
-        line = ""
-    return line
+def read_message(port):
+    while True:
+        try:
+            line = port.readline().decode("ascii").replace('\r', '').replace('\n', '')
+        except:
+            line = ""
+        if len(line) > 0 and line[0] == "$":
+            return line
 
 def nmea_tester(sentence):
     mes = nmea.nmea(sentence)
@@ -132,8 +135,6 @@ def nmea_tester(sentence):
     print("Heading, MagVar")
     print(str(mes.get_magnetic_heading()) + ", " + str(mes.get_magnetic_var()))
 
-sentence = "$GPRMC,081836,A,3751.65,S,14507.36,E,000.0,360.0,130998,011.3,E*62,131.76"
-nmea_tester(sentence)
 
 def arduino_tester():
     ard = setup_serial(arduino_port, 115200)
@@ -146,11 +147,39 @@ def arduino_tester():
             print(home.lat)
             print(home.lon)
             print(home.date)
+            print(heading)
         except:
             break
 
+def display_stats(orient, position, obs):
+    try:
+        print("\n"*65)
+        print('''               _.:::::._
+             .:::'_|_':::.
+            /::' --|-- '::\\
+           |:" .---"---. ':|
+           |: ( O R E O ) :|
+           |:: `-------' ::|
+            \:::.......:::/
+             ':::::::::::'
+                `'"""'`\n\n''')
+        print("Time: {}\n".format(ephem.now()))
+        print("Sensor\n===")
+        print('Heading: {heading:.2f}, Pitch: {pitch:.2f}, '\
+              'Roll: {roll:.2f}\n---'.format(heading = orient.get_heading(),
+                                               pitch = orient.get_pitch(),
+                                               roll = orient.get_roll()))
+        print('CALIBRATION Sys: {cal[0]}, Gyr: {cal[1]},'\
+              ' Acc: {cal[2]}, Mag: {cal[3]}\n'
+              .format(cal=orient.get_calibration()))
+        print('GPS\n===\nFix: {fix}, Lat: {lat}, Lon: {lon}'
+              .format(fix = position.is_fixed(), lat = float(obs.lat), lon = float(obs.lon)))
+        print(position.unparsed)
+    except:
+        pass
+
 #Tests NMEA parser
-#sentence = "$GPRMC,081836,A,3751.65,S,14507.36,E,000.0,360.0,130998,011.3,E*62,131.76"
+#sentence = "$GPRMC,092751.000,A,5321.6802,N,00630.3371,W,0.06,31.66,280511,,,A*45,131.76"
 #nmea_tester(sentence)
 
 
@@ -158,26 +187,59 @@ def arduino_tester():
 #arduino_tester()
 
 #Test serial comms to
+
+
+
+
 home = reset()
-ser = SerialTester()
 ard = setup_serial(arduino_port, 115200)
-icof2 = setup_satellite()
-antenna = Antenna()
-heading = 0.0
 counter = time.time()
+#f = open("log_"+str(float(ephem.now()))+".csv", 'w')
+#f.write("Time,Lat,Lon,Heading\n")
+orient = orientation.orientation("$IMU,0,0,0,0,0,0,0,0,0")
+position = nmea.nmea("$GPRMC,0,V,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0")
 while True:
-    mes = nmea.nmea(read_nmea(ard))
+    mes = (read_message(ard))
+    if mes[:2] == "$G":
+        try:
+            position = nmea.nmea(mes)
+        except:
+            pass
+    elif mes[:2] == "$I":
+        try:
+            orient = orientation.orientation(mes)
+        except:
+            pass
     # home.date = "2016-06-28 12:00:00"
 
         # Operate the antenna if the satellite's elevation is greater than 10
         # degrees
         # If the elevation IS above 10 degrees and the antenna is parked, then
         # unlatch the park_latch variable
-    if time.time()-counter >= sleep_time:
-        home, heading = update(mes)
+    home = update_gps(position, home)
+    home.date = ephem.now()
+
+    display_stats(orient, position, home)
+    '''
+    home = update_gps(nmea_sentence, home)
+    home.date = ephem.now()
+    print(mes)
+
+    f.write(str(ephem.now())+",")
+    f.write(str(float(home.lat)/ephem.degree)+",")
+    f.write(str(float(home.lon)/ephem.degree)+",")
+    try:
+        f.write(str(float(heading))+"\n")
+    except:
+        f.write("\n")
+
+
+
+
         icof2_az, icof2_alt = get_sat_position(icof2, home)
         if (icof2_alt >= min_elevation):
-            antenna.move(icof2_az - heading, icof2_alt)
+            antenna.set_position(icof2_az - heading, icof2_alt)
+
         else:
             antenna.park()
-counter = time.time()
+        '''

@@ -6,6 +6,7 @@ The nmea class takes in a $GPRMC sentence and parses it for information
 import time
 import math
 import ephem
+from geomag import geomag
 
 def format_date(d):
     """Convert the DDMMYY date format returned by the gps to
@@ -180,30 +181,19 @@ class nmea:
         Add this variation to your magnetic bearing to get true bearing.
         """
         try:
-            if self.info[11][0] == 'E':
-                return -float(self.info[10])
-
-            elif self.info[11][0] == 'W':
-                return float(self.info[10])
-
-            else:
-                return None
-
+            print("found mag")
+            gm = geomag.GeoMag()
+            magobj = gm.GeoMag(self.get_lat(),self.get_lon())
+            return magobj.dec
         except IndexError:
             return None
 
+    def get_split(self):
+        return self.info
+        
     def checksum(self):
+        commacount = 12
         try:
-            a = 0
-            tocheck = self.unparsed[1:self.unparsed.index('*')]
-            for s in tocheck:
-                a ^= ord(s)
-            return str(hex(a))[2:] == self.info[11][2:]
+            return self.unparsed.count(',') == commacount
         except:
             return False
-
-    def get_magnetic_heading(self):
-        try:
-            return float(self.info[12])
-        except:
-            return None
