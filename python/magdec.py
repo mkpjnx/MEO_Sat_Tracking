@@ -4,7 +4,6 @@ import serial
 import nmea
 import orientation
 import sys
-import threading
 
 #Constants
 initial_az = 180
