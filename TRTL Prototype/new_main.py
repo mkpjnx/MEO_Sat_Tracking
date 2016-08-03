@@ -68,6 +68,7 @@ def initialize(tracker, dist_threshold):
 
     return coords, calc_bearings, comp_bearings
 
+
 def main():
     """."""
     tracker = track.Tracker(input("Port: "), 115200, True)
