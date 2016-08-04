@@ -175,22 +175,11 @@ class nmea:
         except IndexError:
             return None
 
-    def get_magnetic_var(self):  # not sure what these mean/how accurate
-        """Return magnetic variation at location.
 
-        Add this variation to your magnetic bearing to get true bearing.
-        """
-        try:
-            print("found mag")
-            gm = geomag.GeoMag()
-            magobj = gm.GeoMag(self.get_lat(),self.get_lon())
-            return magobj.dec
-        except IndexError:
-            return None
 
     def get_split(self):
         return self.info
-        
+
     def checksum(self):
         commacount = 12
         try:

@@ -4,6 +4,7 @@ import serial
 import nmea
 import orientation
 import sys
+from geomag import geomag
 
 #Constants
 initial_az = 180
@@ -123,37 +124,11 @@ def read_message(port):
         if len(line) > 0 and line[0] == "$":
             return line
 
-def nmea_tester(sentence):
-    mes = nmea.nmea(sentence)
-    print("Checksum: ")
-    print(mes.checksum())
-    print("Reformatted Date & Time: ")
-    print(mes.get_date())
-    print(mes.get_time())
-    print("Lat, Lon: ")
-    print(str(mes.get_lat()) + ", " + str(mes.get_lon()))
-    print("Heading, MagVar")
-    print(str(mes.get_magnetic_heading()) + ", " + str(mes.get_magnetic_var()))
-
-
-def arduino_tester():
-    ard = setup_serial(arduino_port, 115200)
-    icof2 = setup_satellite()
-    while True:
-        try:
-            line = read_nmea(ard)
-            home = reset()
-            home, heading = update(nmea.nmea(line))
-            print(home.lat)
-            print(home.lon)
-            print(home.date)
-            print(heading)
-        except:
-            break
 
 def display_stats(orient, position, obs):
     try:
         print("\n"*65)
+        magvar = get_magnetic_var(float(last_lat), float(last_lon))
         print('''               _.:::::._
              .:::'_|_':::.
             /::' --|-- '::\\
@@ -164,30 +139,32 @@ def display_stats(orient, position, obs):
              ':::::::::::'
                 `'"""'`\n\n''')
         print("Time: {}\n".format(ephem.now()))
+
+        print('GPS\n===\nFix: {fix}, Lat: {lat}, Lon: {lon}'
+              .format(fix = position.is_fixed(), lat = obs.lat, lon = obs.lon))
+        print(position.unparsed)
+
         print("Sensor\n===")
-        print('Heading: {heading:.2f}, Pitch: {pitch:.2f}, '\
-              'Roll: {roll:.2f}\n---'.format(heading = orient.get_heading(),
+        print('Heading: {heading:7.2f}, Pitch: {pitch:7.2f}, '\
+              'Roll: {roll:7.2f}\n---'.format(heading = orient.get_heading(),
                                                pitch = orient.get_pitch(),
                                                roll = orient.get_roll()))
         print('CALIBRATION Sys: {cal[0]}, Gyr: {cal[1]},'\
               ' Acc: {cal[2]}, Mag: {cal[3]}\n'
               .format(cal=orient.get_calibration()))
-        print('GPS\n===\nFix: {fix}, Lat: {lat}, Lon: {lon}'
-              .format(fix = position.is_fixed(), lat = float(obs.lat), lon = float(obs.lon)))
-        print(position.unparsed)
+        print("\nMagnetic Declination: {magvar:7.2f}, "
+              "Adjusted Heading: {true_heading:7.2f}"
+              .format(magvar = magvar,
+              true_heading= (orient.get_heading() +
+              magvar+720)%360))
     except:
         pass
 
-#Tests NMEA parser
-#sentence = "$GPRMC,092751.000,A,5321.6802,N,00630.3371,W,0.06,31.66,280511,,,A*45,131.76"
-#nmea_tester(sentence)
 
-
-#Tests Arduino Reader -> observer interface
-#arduino_tester()
-
-#Test serial comms to
-
+def get_magnetic_var(lat, lon):
+    gm = geomag.GeoMag()
+    magobj = gm.GeoMag(lat, lon)
+    return magobj.dec
 
 
 
@@ -198,6 +175,8 @@ counter = time.time()
 #f.write("Epoch Time,Heading\n")
 orient = orientation.orientation("$IMU,0,0,0,0,0,0,0,0,0")
 position = nmea.nmea("$GPRMC,0,V,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0")
+magvar = get_magnetic_var(float(last_lat), float(last_lon))
+
 while True:
     mes = (read_message(ard))
     if mes[:2] == "$G":
@@ -218,6 +197,8 @@ while True:
         # unlatch the park_latch variable
     home = update_gps(position, home)
     home.date = ephem.now()
+
+    magvar = get_magnetic_var(float(last_lat), float(last_lon))
 
     display_stats(orient, position, home)
 '''    if time.time() - counter >= 1.0:

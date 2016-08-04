@@ -155,6 +155,7 @@ def arduino_tester():
 def display_stats(orient, position, obs):
     try:
         print("\n"*65)
+        magvar = get_magnetic_var(float(last_lat), float(last_lon))
         print('''               _.:::::._
              .:::'_|_':::.
             /::' --|-- '::\\
@@ -165,40 +166,43 @@ def display_stats(orient, position, obs):
              ':::::::::::'
                 `'"""'`\n\n''')
         print("Time: {}\n".format(ephem.now()))
+
+        print('GPS\n===\nFix: {fix}, Lat: {lat}, Lon: {lon}'
+              .format(fix = position.is_fixed(), lat = obs.lat, lon = obs.lon))
+        print(position.unparsed)
+
         print("Sensor\n===")
-        print('Heading: {heading:.2f}, Pitch: {pitch:.2f}, '\
-              'Roll: {roll:.2f}\n---'.format(heading = orient.get_heading(),
+        print('Heading: {heading:7.2f}, Pitch: {pitch:7.2f}, '\
+              'Roll: {roll:7.2f}\n---'.format(heading = orient.get_heading(),
                                                pitch = orient.get_pitch(),
                                                roll = orient.get_roll()))
         print('CALIBRATION Sys: {cal[0]}, Gyr: {cal[1]},'\
               ' Acc: {cal[2]}, Mag: {cal[3]}\n'
               .format(cal=orient.get_calibration()))
-        print('GPS\n===\nFix: {fix}, Lat: {lat}, Lon: {lon}'
-              .format(fix = position.is_fixed(), lat = float(obs.lat), lon = float(obs.lon)))
-        print(position.unparsed)
+        print("\nMagnetic Declination: {magvar:7.2f}, "
+              "Adjusted Heading: {true_heading:7.2f}"
+              .format(magvar = magvar,
+              true_heading= (orient.get_heading() +
+              magvar+720)%360))
     except:
         pass
 
-#Tests NMEA parser
-#sentence = "$GPRMC,092751.000,A,5321.6802,N,00630.3371,W,0.06,31.66,280511,,,A*45,131.76"
-#nmea_tester(sentence)
 
-
-#Tests Arduino Reader -> observer interface
-#arduino_tester()
-
-#Test serial comms to
-
+def get_magnetic_var(lat, lon):
+    gm = geomag.GeoMag()
+    magobj = gm.GeoMag(lat, lon)
+    return magobj.dec
 
 
 
 home = reset()
 ard = setup_serial(arduino_port, 115200)
 counter = time.time()
-f = open("logs/log_"+str(float(ephem.now()))+".csv", 'w')
-f.write("Epoch Time,Heading\n")
+#f = open("logs/log_"+str(float(ephem.now()))+".csv", 'w')
+#f.write("Epoch Time,Heading\n")
 orient = orientation.orientation("$IMU,0,0,0,0,0,0,0,0,0")
 position = nmea.nmea("$GPRMC,0,V,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0")
+magvar = get_magnetic_var(float(last_lat), float(last_lon))
 
 class myThread(threading.Thread):
     def __init__(self):
@@ -241,6 +245,8 @@ while True:
         # unlatch the park_latch variable
     home = update_gps(position, home)
     home.date = ephem.now()
+
+    magvar = get_magnetic_var(float(last_lat), float(last_lon))
 
     display_stats(orient, position, home)
     print(val)
