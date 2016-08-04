@@ -1,5 +1,6 @@
 import threading
 import time
+import ephem
 
 class myThread(threading.Thread):
     def __init__(self, value):
@@ -8,8 +9,9 @@ class myThread(threading.Thread):
 
     def run(self):
         while True:
-            time.sleep(1)
+            time.sleep(0.1)
             #Replace this print line with your actual function, which can use self.val to say what the waypoint is
+            print(ephem.now())
             print(self.val)
 
     def increment(self):
@@ -20,6 +22,6 @@ thread1 = myThread('A')
 thread1.start()
 
 while True:
-    ii = input("Push enter to go to next subpoint")
+    ii = input()
     thread1.increment()
     pass

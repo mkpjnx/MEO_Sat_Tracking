@@ -199,6 +199,28 @@ f = open("logs/log_"+str(float(ephem.now()))+".csv", 'w')
 f.write("Epoch Time,Heading\n")
 orient = orientation.orientation("$IMU,0,0,0,0,0,0,0,0,0")
 position = nmea.nmea("$GPRMC,0,V,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0")
+
+class myThread(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+
+
+    def run(self):
+        global val
+        global ii
+        val = '@'
+        ii = ''
+        while True:
+            ii = input()
+            if ii == "q":
+                break
+            val = chr(ord(val) + 1)
+            pass
+
+thread1 = myThread()
+
+thread1.start()
+
 while True:
     mes = (read_message(ard))
     if mes[:2] == "$G":
@@ -221,20 +243,19 @@ while True:
     home.date = ephem.now()
 
     display_stats(orient, position, home)
+    print(val)
     if time.time() - counter >= 1.0:
         counter = time.time()
         try:
             heading = orient.get_heading()
             f.write(str(ephem.now())+",")
-            f.write(str(float(ephem.now()))+",")
-            f.write(str(heading)+"\n")
-            f.flush()
+            f.write(str(heading)+",")
+            f.write(val+"\n")
         except:
             f.write("x\n")
-            f.flush()
-
-
-
+    if ii == "q":
+        f.close()
+        break
 
 '''            icof2_az, icof2_alt = get_sat_position(icof2, home)
             if (icof2_alt >= min_elevation):

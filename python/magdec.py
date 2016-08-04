@@ -194,8 +194,8 @@ def display_stats(orient, position, obs):
 home = reset()
 ard = setup_serial(arduino_port, 115200)
 counter = time.time()
-f = open("logs/log_"+str(float(ephem.now()))+".csv", 'w')
-f.write("Epoch Time,Heading\n")
+#f = open("logs/log_"+str(float(ephem.now()))+".csv", 'w')
+#f.write("Epoch Time,Heading\n")
 orient = orientation.orientation("$IMU,0,0,0,0,0,0,0,0,0")
 position = nmea.nmea("$GPRMC,0,V,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0")
 while True:
@@ -220,7 +220,7 @@ while True:
     home.date = ephem.now()
 
     display_stats(orient, position, home)
-    if time.time() - counter >= 1.0:
+'''    if time.time() - counter >= 1.0:
         counter = time.time()
         try:
             heading = orient.get_heading()
@@ -231,7 +231,7 @@ while True:
         except:
             f.write("x\n")
             f.flush()
-
+'''
 
 
 
