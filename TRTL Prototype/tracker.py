@@ -84,7 +84,7 @@ class Tracker:
 
     def __init__(self, port, timeout, baud=9600):
         """Initialize with the provided port and a default baud of 9600."""
-        self.ser = serial.Serial(port, baud, timeout = timeout)
+        self.ser = serial.Serial(port, baud, timeout=timeout)
         time.sleep(5)
         self.ser.reset_input_buffer()
         self.refresh()

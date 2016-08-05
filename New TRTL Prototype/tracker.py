@@ -84,7 +84,7 @@ class Tracker:
 
     def __init__(self, port, timeout, baud=9600):
         """Initialize with the provided port and a default baud of 9600."""
-        self.ser = serial.Serial(port, baud, timeout = timeout)
+        self.ser = serial.Serial(port, baud, timeout=timeout)
         time.sleep(5)
         self.ser.reset_input_buffer()
         self.refresh()
@@ -95,7 +95,7 @@ class Tracker:
         unparsed = str(self.ser.readline())[2:]
         unparsed = unparsed.replace('\\r', '').replace('\\n', '')
 
-        if len(unparsed.split(',')) < 1:
+        if len(unparsed.split(',')) < 20:
             print("Timeout occured")
             self.ser.reset_input_buffer()
 
@@ -106,7 +106,6 @@ class Tracker:
         """Check fix state of GPS and return True/False."""
         try:
             return self.info[2] == 'A'
-
         except:
             return False
 
