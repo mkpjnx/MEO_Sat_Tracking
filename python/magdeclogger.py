@@ -5,6 +5,7 @@ import nmea
 import orientation
 import sys
 import threading
+from geomag import geomag
 
 #Constants
 initial_az = 180
@@ -198,8 +199,8 @@ def get_magnetic_var(lat, lon):
 home = reset()
 ard = setup_serial(arduino_port, 115200)
 counter = time.time()
-#f = open("logs/log_"+str(float(ephem.now()))+".csv", 'w')
-#f.write("Epoch Time,Heading\n")
+f = open("logs/log_"+str(float(ephem.now()))+".csv", 'w')
+f.write("Epoch Time,Heading\n")
 orient = orientation.orientation("$IMU,0,0,0,0,0,0,0,0,0")
 position = nmea.nmea("$GPRMC,0,V,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0")
 magvar = get_magnetic_var(float(last_lat), float(last_lon))
