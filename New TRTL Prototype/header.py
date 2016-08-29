@@ -1,4 +1,4 @@
-"""Provides bearinga nd coords classes."""
+"""Provides bearinga and coords classes."""
 import math
 import tracker
 
