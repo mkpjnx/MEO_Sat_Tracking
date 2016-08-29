@@ -17,6 +17,7 @@ class Transcriber:
         self.data = []
         self.index = 0
         self.generate_data()
+        print("Data populated, max index", self.max_index)
 
     def generate_data(self):
         """Read a line and extract the variables."""
@@ -38,23 +39,41 @@ class Transcriber:
 
     def get_time(self):
         """Return time."""
-        print("Time", self.data[self.index][0])
+        # print("Time", self.data[self.index][0])
         return self.data[self.index][0]
 
     def get_lat(self):
         """Return latitude."""
-        print("Lat", self.data[self.index][1])
-        return self.data[self.index][1]
+        # print("Lat", self.data[self.index][1])
+        try:
+            lat = float(self.data[self.index][1])
+        except TypeError:
+            print("TypeError encountered", self.data[self.index][1])
+            lat = 0
+        finally:
+            return lat
 
     def get_lon(self):
         """Return longitude."""
-        print("Lon", self.data[self.index][2])
-        return self.data[self.index][2]
+        # print("Lon", self.data[self.index][2])
+        try:
+            lon = float(self.data[self.index][2])
+        except TypeError:
+            print("TypeError encountered", self.data[self.index][2])
+            lon = 0
+        finally:
+            return lon
 
     def get_yaw(self):
         """Return heading."""
-        print("Yaw", self.data[self.index][3])
-        return self.data[self.index][3]
+        # print("Yaw", self.data[self.index][3])
+        try:
+            yaw = float(self.data[self.index][3])
+        except TypeError:
+            print("TypeError encountered", self.data[self.index][3])
+            yaw = 0
+        finally:
+            return yaw
 
 
 def drift_check(coords, calc_bearings, comp_bearings, rotate_threshold):
@@ -75,34 +94,34 @@ def rotate_check(comp_bearings, rotate_threshold):
 def update_status(tracker, coords, calc_bearings, comp_bearings,
                   rotate_threshold):
     """Update various status variables (drifting and float checks)."""
-    drifting = drift_check(coords, calc_bearings, comp_bearings,
-                           rotate_threshold)
+    # drifting = drift_check(coords, calc_bearings, comp_bearings,
+    #                        rotate_threshold)
     is_float_coords = (type(tracker.get_lat()) is float and
                        type(tracker.get_lon()) is float)
     is_float_yaw = type(tracker.get_yaw()) is float
 
-    return drifting, is_float_coords, is_float_yaw
+    return is_float_coords, is_float_yaw
 
 
 def initialize(tracker, dist_threshold):
     """Initilialize the tracker with the given thresholds."""
     coords = header.Coords(tracker.get_lat(), tracker.get_lon())
-    tracker.refresh()
+    # tracker.refresh()
     is_float_coords = (type(tracker.get_lat()) is float and
                        type(tracker.get_lon()) is float)
 
-    while len(coords.lats) < 2:
+    for i in range(2):
         # print("I'm stuck! 1")
         if is_float_coords:
             coords.add_coords(tracker.get_lat(), tracker.get_lon())
 
-    while coords.get_dist_travelled() < dist_threshold:
-        print("I'm stuck! 2")
-        coords.lock()
-        tracker.refresh()
-
-        if is_float_coords:
-            coords.add_coords(tracker.get_lat(), tracker.get_lon())
+    # while coords.get_dist_travelled() < dist_threshold:
+    #     # print("I'm stuck! 2")
+    #     coords.lock()
+    #     tracker.refresh()
+    #
+    #     if is_float_coords:
+    #         coords.add_coords(tracker.get_lat(), tracker.get_lon())
 
     calc_bearings = header.Bearings(coords.get_current_bearing())
     comp_bearings = header.Bearings(tracker.get_yaw())
@@ -113,9 +132,9 @@ def initialize(tracker, dist_threshold):
 def run():
     """Main algorithmic loop."""
     tracker = Transcriber(file_in)
-    init_dist_threshold = 5
-    dist_threshold = 2  # Threshold for linear movement in meters
-    rotate_threshold = 5  # Threshold for rotational movement in degrees
+    init_dist_threshold = 2
+    dist_threshold = 3  # Threshold for linear movement in meters
+    rotate_threshold = 4  # Threshold for rotational movement in degrees
     coords, calc_bearings, comp_bearings = initialize(tracker,
                                                       init_dist_threshold)
 
@@ -124,16 +143,18 @@ def run():
     data = open(filename, 'w')
 
     while tracker.index < tracker.max_index:
-        print("I'm stuck! 3")
+        # print("I'm stuck! 3")
         tracker.refresh()
         print(tracker.get_time())
         state = ""
-        drifting, is_float_coords, is_float_yaw = update_status(tracker,
-                                                                coords,
-                                                                calc_bearings,
-                                                                comp_bearings)
 
-        print("Fixed")
+        is_float_coords, is_float_yaw = update_status(
+            tracker, coords, calc_bearings, comp_bearings, rotate_threshold)
+        try:
+            drifting = drift_check(coords, calc_bearings, comp_bearings,
+                                   rotate_threshold)
+        except IndexError:
+            print("Drift check failed!")
 
         if is_float_coords:
             coords.add_coords(tracker.get_lat(), tracker.get_lon())
