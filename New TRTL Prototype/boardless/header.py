@@ -1,5 +1,5 @@
 import math
-import tracker
+import boardless_tracker as tracker
 from time import sleep
 
 class Bearings:
@@ -75,7 +75,7 @@ class Coords:
 def fix(tracker):
     while not tracker.is_fixed():
         tracker.refresh()
-        # print('Fixing')
+        print('Fixing')
 
 
 def initialize(tracker, dist_threshold):
@@ -85,12 +85,8 @@ def initialize(tracker, dist_threshold):
 
     tracker.refresh()
     fix(tracker)
-
-    is_float_coords = (type(tracker.get_lat()) is float and
-                       type(tracker.get_lon()) is float)
-
     while len(coords.lats) < 2:
-        if is_float_coords:
+        if type(tracker.get_lat()) is float and type(tracker.get_lon()) is float:
             coords.add_coords(tracker.get_lat(), tracker.get_lon())
 
     while coords.get_dist_travelled() < dist_threshold:
@@ -98,10 +94,10 @@ def initialize(tracker, dist_threshold):
         tracker.refresh()
 
         if tracker.is_fixed():
-            if is_float_coords:
+            if type(tracker.get_lat()) is float and type(tracker.get_lon()) is float:
                 coords.add_coords(tracker.get_lat(), tracker.get_lon())
 
-        # print('Initialize bearing')
+        print('Initialize bearing')
         # sleep(1)
 
     calc_bearings = Bearings(coords.get_current_bearing())

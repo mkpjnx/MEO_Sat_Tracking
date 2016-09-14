@@ -5,9 +5,7 @@ TIME, LAT, LON, HEADING, TRUE_BEARING
 
 """
 import header
-from math import sqrt
-# import tracker as track
-# from time import sleep
+from math import sqrt, floor
 
 
 def error(predicted, actual):
@@ -104,47 +102,13 @@ def fix(tracker):
 #     return abs(comp_bearings.delta_bearing()) > rotate_threshold
 
 
-def update_status(tracker, coords, calc_bear, comp_bear, rot_thres):
+def float_check(tracker):
     """Update various status variables (drifting and float checks)."""
-    drifting = header.drift_check(coords, calc_bear, comp_bear, rot_thres)
     is_float_coords = (type(tracker.get_lat()) is float and
                        type(tracker.get_lon()) is float)
     is_float_yaw = type(tracker.get_yaw()) is float
 
-    return drifting, is_float_coords, is_float_yaw
-
-
-# def initialize(tracker, dist_threshold):
-#     """Initilialize the tracker with the given thresholds."""
-#     fix(tracker)
-#
-#     coords = header.Coords(tracker.get_lat(), tracker.get_lon())
-#
-#     tracker.refresh()
-#     fix(tracker)
-#
-#     is_float_coords = (type(tracker.get_lat()) is float and
-#                        type(tracker.get_lon()) is float)
-#     while len(coords.lats) < 2:
-#         if is_float_coords:
-#             coords.add_coords(tracker.get_lat(), tracker.get_lon())
-#
-#     while coords.get_dist_travelled() < dist_threshold:
-#         coords.lock()
-#         tracker.refresh()
-#
-#         if tracker.is_fixed():
-#             if is_float_coords:
-#                 coords.add_coords(tracker.get_lat(), tracker.get_lon())
-#
-#         print('Initialize bearing')
-#         # sleep(1)
-#     calc_bearings = header.Bearings(coords.get_current_bearing())
-#     comp_bearings = header.Bearings(tracker.get_yaw())
-#
-#     comp_bearings.add_bearing(358.44)
-#
-#     return coords, calc_bearings, comp_bearings
+    return is_float_coords, is_float_yaw
 
 
 def main(idist, dist, rotate):
@@ -156,13 +120,12 @@ def main(idist, dist, rotate):
     rotate_threshold = rotate  # Threshold for sig. rotation in degrees
     coords, calc_bearings, comp_bearings = header.initialize(tr,
                                                              dist_threshold)
-    comp_bearings.add_bearing(180)
     version_string = ("_i" + str(init_dist_threshold) + "d" +
                       str(dist_threshold) + "r" + str(rotate_threshold))
     write_name = (filename.rsplit('.', 1)[0] + version_string +  # NOQA
                   "_reprocessed.txt")
     # with open(write_name, 'w') as data:
-        # print("File opened:", write_name)
+    # print("File opened:", write_name)
     try:
         while True:
             tr.refresh()
@@ -171,15 +134,18 @@ def main(idist, dist, rotate):
                 # print('Fixed')
                 # print("Step #", tr.step)
                 # print(tr.get_time())
-                (drifting, is_float_coords, is_float_yaw) = update_status(
-                  tr, coords, calc_bearings, comp_bearings,
-                  rotate_threshold)
+                (is_float_coords, is_float_yaw) = float_check(tr)
 
                 if is_float_coords:
                     coords.add_coords(tr.get_lat(), tr.get_lon())
 
                 if is_float_yaw:
                     comp_bearings.add_bearing(tr.get_yaw())
+                else:
+                    comp_bearings.lock()
+
+                drifting = header.drift_check(coords, calc_bearings,
+                                              comp_bearings, rotate_threshold)
 
                 if comp_bearings.delta_bearing() < rotate_threshold:
                     comp_bearings.lock()
@@ -227,26 +193,32 @@ def main(idist, dist, rotate):
         # print("Loop end reached.")
         return rms_error
 
+
 filename = "testdata.txt"
 trials = []
 dist_step = .2
 rotate_step = .2
-
+prev_perc = 0
+perc = 0
 # Run the trials
 with open("rms_list.txt", 'w') as rms:
     print("Working...")
     try:
-        for i in range(int(100 / dist_step)):  # i = dist_threshold
-            for j in range(int(180 / rotate_step)):  # j = rotate_threshold
+        for i in range(int(50 / dist_step)):  # i = dist_threshold
+            for j in range(int(90 / rotate_step)):  # j = rotate_threshold
                 trial_data = (i * dist_step, j * rotate_step,
                               main(5, i * dist_step, j * rotate_step))
                 trials.append(trial_data)
                 rms.write(("{0:.2f}".format(trial_data[0]) + ", ").ljust(5) +
                           ("{0:.2f}".format(trial_data[1]) + ", ").ljust(5) +
                           ("{0:.2f}".format(trial_data[2]) + "\n").ljust(5))
-                print(("{0:.2f}".format(trial_data[0]) + ", ").ljust(5) +
-                      ("{0:.2f}".format(trial_data[1]) + ", ").ljust(5) +
-                      ("{0:.2f}".format(trial_data[2]).ljust(5)))
+                perc = floor(i/(50/dist_step)*100)
+                if perc != prev_perc:
+                    prev_perc = perc
+                    print(str(perc) + "%")
+                # print(("{0:.2f}".format(trial_data[0]) + ", ").ljust(5) +
+                #       ("{0:.2f}".format(trial_data[1]) + ", ").ljust(5) +
+                #       ("{0:.2f}".format(trial_data[2]).ljust(5)))
     except KeyboardInterrupt:
         print("Interrupted.")
     # Find the trial with the smallest error
