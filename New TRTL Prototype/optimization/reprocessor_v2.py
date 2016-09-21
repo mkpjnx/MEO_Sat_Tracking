@@ -118,8 +118,8 @@ def main(idist, dist, rotate):
     init_dist_threshold = idist
     dist_threshold = dist  # Threshold for sig. linear movement in meters
     rotate_threshold = rotate  # Threshold for sig. rotation in degrees
-    coords, calc_bearings, comp_bearings = header.initialize(tr,
-                                                             dist_threshold)
+    coords, calc_bearings, comp_bearings = header.initialize(
+      tr, init_dist_threshold)
     version_string = ("_i" + str(init_dist_threshold) + "d" +
                       str(dist_threshold) + "r" + str(rotate_threshold))
     write_name = (filename.rsplit('.', 1)[0] + version_string +  # NOQA
@@ -188,7 +188,7 @@ def main(idist, dist, rotate):
             else:
                 # print('No fix')
                 coord, calc_bearings, comp_bearings = header.initialize(
-                  tr, dist_threshold)
+                  tr, init_dist_threshold)
     except IndexError:
         # print("Loop end reached.")
         return rms_error
@@ -196,39 +196,59 @@ def main(idist, dist, rotate):
 
 filename = "testdata.txt"
 trials = []
-dist_step = .2
-rotate_step = .2
+
+init_step = .5
+dist_step = .5
+rotate_step = .5
+
+init_range = 10
+dist_range = 10
+rot_range = 10
+
 prev_perc = 0
 perc = 0
+
 # Run the trials
 with open("rms_list.txt", 'w') as rms:
     print("Working...")
     try:
-        for i in range(int(50 / dist_step)):  # i = dist_threshold
-            for j in range(int(90 / rotate_step)):  # j = rotate_threshold
-                trial_data = (i * dist_step, j * rotate_step,
-                              main(5, i * dist_step, j * rotate_step))
-                trials.append(trial_data)
-                rms.write(("{0:.2f}".format(trial_data[0]) + ", ").ljust(5) +
-                          ("{0:.2f}".format(trial_data[1]) + ", ").ljust(5) +
-                          ("{0:.2f}".format(trial_data[2]) + "\n").ljust(5))
-                perc = floor(i/(50/dist_step)*100)
-                if perc != prev_perc:
-                    prev_perc = perc
-                    print(str(perc) + "%")
-                # print(("{0:.2f}".format(trial_data[0]) + ", ").ljust(5) +
-                #       ("{0:.2f}".format(trial_data[1]) + ", ").ljust(5) +
-                #       ("{0:.2f}".format(trial_data[2]).ljust(5)))
+        for h in range(int(init_range / init_step)):
+            for i in range(int(dist_range / dist_step)):
+                for j in range(int(rot_range / rotate_step)):
+                    trial_data = (h * init_step,
+                                  i * dist_step,
+                                  j * rotate_step, main(h * init_step,
+                                                        i * dist_step,
+                                                        j * rotate_step))
+                    trials.append(trial_data)
+                    rms.write(("{0:.2f}".format(trial_data[0]) +
+                               ", ").ljust(5) +
+                              ("{0:.2f}".format(trial_data[1]) +
+                               ", ").ljust(5) +
+                              ("{0:.2f}".format(trial_data[2]) +
+                               ", ").ljust(5) +
+                              ("{0:.2f}".format(trial_data[3]) +
+                               ", ").ljust(5))
+
+                    perc = floor(h/(init_range/init_step)*100)
+                    if perc != prev_perc:
+                        prev_perc = perc
+                        print(str(perc) + "%")
+                    # print(("{0:.2f}".format(trial_data[0]) + ", ").ljust(5) +
+                    #       ("{0:.2f}".format(trial_data[1]) + ", ").ljust(5) +
+                    #       ("{0:.2f}".format(trial_data[2]).ljust(5)))
     except KeyboardInterrupt:
         print("Interrupted.")
     # Find the trial with the smallest error
-    trial_errors = [item[2] for item in trials]
+    trial_errors = [item[3] for item in trials]
     min_error = min(trial_errors)
     min_index = trial_errors.index(min_error)
     min_trial = trials[min_index]
 
-    min_dist, min_rot, min_rms = min_trial
-    rms.write("Minimum trial:\nRMS: " + str(min_rms) + "\nDist: " +
-              str(min_dist) + "Rot: " + str(min_rot))
-    print("Minimum trial:\nRMS:", min_rms, "\nDist:", min_dist, "Rot:",
-          min_rot)
+    min_init, min_dist, min_rot, min_rms = min_trial
+    rms.write("Minimum trial:\nRMS: " + str(min_rms) +
+              "\nInit: " + str(min_init) +
+              " Dist: " + str(min_dist) +
+              " Rot: " + str(min_rot))
+    print("Minimum trial:\nRMS:", min_rms, "\nInit:", min_init, "Dist:",
+          min_dist, "Rot:", min_rot)
