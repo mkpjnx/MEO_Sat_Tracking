@@ -14,11 +14,11 @@ class BearingList:
         """Constructor."""
         self.b = [bear]
 
-    def add_bearing(self, b):
+    def add_bearing(self, bearing):
         """Insert a bearing at the beginning of the list."""
-        self.b.insert(0, b)
+        self.b.insert(0, bearing)
 
-        if len(self.b) >= 10:
+        if len(self.b) > 10:
             self.b.pop()
 
     def get_bearing(self):

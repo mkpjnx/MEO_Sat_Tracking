@@ -8,7 +8,7 @@ import nmea
 import orientation
 import geolists
 
-from geolists import rotate_check, drift_check
+from geolists import rotate_check  # , drift_check
 
 import threading
 
@@ -195,15 +195,20 @@ home = reset()
 ard = setup_serial(arduino_port, arduino_baud)
 # ant = antenna.Antenna(mount_port, mount_baud) #Use this later
 
+# These variables hold objects with all of the data related to orientation from
+# the DOF and position from the NMEA.
 orient = orientation.Orientation("$IMU,0,0,0,0,0,0,0,0,0")
 position = nmea.NMEA("$GPRMC,0,V,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0")
-magvar = get_magnetic_var(float(last_lat), float(last_lon))
 
+magvar = get_magnetic_var(float(last_lat), float(last_lon))
+counter = time.time()
+
+# List of GPS coordinates for calculating bearing differentially
 coords_list = geolists.CoordsList(float(last_lat), float(last_lon))
 
-coords_br_list = geolists.BearingList(last_heading)
-dof_br_list = geolists.BearingList(orient.get_heading())
-nmea_br_list = geolists.BearingList(position.get_bearing())
+coords_br_list = geolists.BearingList(last_heading)  # GPS bearings
+dof_br_list = geolists.BearingList(orient.get_heading())  # DOF bearings
+nmea_br_list = geolists.BearingList(position.get_bearing())  # NMEA bearings
 
 
 class KeyListener(threading.Thread):
@@ -230,64 +235,74 @@ class KeyListener(threading.Thread):
 kl = KeyListener()
 
 kl.start()
-f = open(str(float(ephem.now()))+".csv", 'w')
+with open(str(float(ephem.now()))+".csv", 'w') as f:
+    f.write("Time, Latitude, Longitude, Heading, DOF Bearing, NMEA Bearing,"
+            "Differential Bearing, Interval\n")
+    while True:
 
-while True:
+        # Updates whenever data comes in
+        mes = (read_message(ard))
+        if mes[:2] == "$G":
+            try:
+                # print("GPS received")
+                position = nmea.NMEA(mes)
+                coords_list.add_coords(position.get_lat(), position.get_lon())
+                coords_br_list.add_bearing(coords_list.get_current_bearing())
+                nmea_br_list.add_bearing(position.get_bearing())
+                # print("GPS parsed")
+            except Exception as e:
+                print("GPS ERROR: {0}".format(e))
+        elif mes[:2] == "$I":
+            try:
+                # print("Orientation received")
+                orient = orientation.Orientation(mes)
+                corrected_heading = (orient.get_heading() + magvar + 720) % 360
+                dof_br_list.add_bearing(corrected_heading)
+                # print("Orientation parsed")
+            except Exception as e:
+                print("ORIENTATION ERROR: {0}".format(e))
 
-    # Updates whenever data comes in
-    mes = (read_message(ard))
-    if mes[:2] == "$G":
-        try:
-            print("GPS received")
-            position = nmea.NMEA(mes)
-            coords_list.add_coords(position.get_lat(), position.get_lon())
-            coords_br_list.add_bearing(coords_list.get_current_bearing())
-            nmea_br_list.add_bearing(position.get_bearing())
-        except:
-            pass
-    elif mes[:2] == "$I":
-        try:
-            print("Orientation receieved")
-            orient = orientation.Orientation(mes)
-            corrected_heading = (orient.get_heading() + magvar + 720) % 360
-            dof_br_list.add_bearing(corrected_headng)
-        except:
-            pass
-    home = update_gps(position, home)
-    home.date = ephem.now()
+        home = update_gps(position, home)
+        home.date = ephem.now()
 
-    magvar = get_magnetic_var(float(last_lat), float(last_lon))
-    mag_cal = float(orient.get_calibration()[3])
+        magvar = get_magnetic_var(float(last_lat), float(last_lon))
+        mag_cal = float(orient.get_calibration()[3])
 
-    # Bearing decision
-    bearing = coords_br_list.get_bearing()
-    method = "TRTL Differential"
+        # Bearing decision
+        bearing = coords_br_list.get_bearing()
+        method = "TRTL Differential"
 
-    print(len(dof_br_list.b))
-    if mag_cal > 0 and len(dof_br_list.b) > 1:
-        if rotate_check(dof_br_list, 2):
-            bearing = nmea_br_list.get_bearing()
-            method = "NMEA Bearing"
-        elif not rotate_check(dof_br_list, 2):
-            bearing = dof_br_list.get_bearing()
-            method = "DOF Heading"
+        # Debug the length of the bearing lists
+        # print(len(dof_br_list.b), len(coords_br_list.b), len(nmea_br_list.b))
 
-    # display_stats(orient, position, home, bearing, method)
-    counter = time.time()
-    print(val)
-    if time.time() - counter >= 1.0:
-        counter = time.time()
-        try:
-            heading = orient.get_heading()
-            f.write(str(ephem.now())+",")
-            f.write(str(heading)+",")
-            f.write(str(nmea_br_list.get_bearing()))
-            f.write(val+"\n")
-        except:
-            f.write("x\n")
-    if ii == "q":
-        f.close()
-        break
+        # Decide on which method to use
+        if mag_cal > 0 and len(dof_br_list.b) > 1:
+            if rotate_check(dof_br_list, 2):
+                bearing = nmea_br_list.get_bearing()
+                method = "NMEA Bearing"
+            elif not rotate_check(dof_br_list, 2):
+                bearing = dof_br_list.get_bearing()
+                method = "DOF Heading"
+
+        # Print the stats
+        display_stats(orient, position, home, bearing, method)
+
+        if time.time() - counter >= 1.0:
+            counter = time.time()
+            try:
+                f.write(str(ephem.now()) + ", " +
+                        str(position.get_lat()) + ", " +
+                        str(position.get_lat()) + ", " +
+                        str(orientation.get_heading()) + ", " +
+                        str(dof_br_list.get_bearing()) + ", " +
+                        str(nmea_br_list.get_bearing()) + ", " +
+                        str(coords_br_list.get_bearing()) + ", " +
+                        val+"\n")
+            except Exception as e:
+                print("WRITE ERROR: {0}".format(e))
+                f.write("ERROR\n")
+        if ii == "q":
+            break
 
     # icof2_az, icof2_alt = get_sat_position(icof2, home)
     # antenna.set_position(icof2_az - heading, icof2_alt)
