@@ -3,8 +3,8 @@
 Includes differntial calculations, from the TRTL method.
 """
 
-import nmea
 import math
+import nmea
 
 
 class BearingList:
@@ -66,10 +66,14 @@ class CoordsList:
         """
         # Find length of one degree of latitude and longitude based on average
         # of two most recent latitudes
-        latlen, lonlen = nmea.len_lat_lon((self.lats[0] + self.lats[1]) / 2)
-        x = (self.longs[0] - self.longs[1]) * lonlen
-        y = (self.lats[0] - self.lats[1]) * latlen
+        lat_len, lon_len = nmea.len_lat_lon((self.lats[0] + self.lats[1]) / 2)
 
+        # x = (self.longs[0] - self.longs[1]) * lon_len
+        # y = (self.lats[0] - self.lats[1]) * lat_len
+
+        x = (self.longs[0] - self.longs[1])
+        y = (self.lats[0] - self.lats[1])
+        
         # Bearing in degrees East of North
         b = 90 - math.degrees(math.atan2(y, x))
 

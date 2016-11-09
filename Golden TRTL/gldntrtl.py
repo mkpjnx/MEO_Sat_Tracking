@@ -268,7 +268,7 @@ with open(str(float(ephem.now()))+".csv", 'w') as f:
         magvar = get_magnetic_var(float(last_lat), float(last_lon))
         mag_cal = float(orient.get_calibration()[3])
 
-        # Bearing decision
+        # Bearing decision starts here using the differential method by default
         bearing = coords_br_list.get_bearing()
         method = "TRTL Differential"
 
@@ -280,7 +280,7 @@ with open(str(float(ephem.now()))+".csv", 'w') as f:
             if rotate_check(dof_br_list, 2):
                 bearing = nmea_br_list.get_bearing()
                 method = "NMEA Bearing"
-            elif not rotate_check(dof_br_list, 2):
+            else:
                 bearing = dof_br_list.get_bearing()
                 method = "DOF Heading"
 
@@ -293,7 +293,7 @@ with open(str(float(ephem.now()))+".csv", 'w') as f:
                 f.write(str(ephem.now()) + ", " +
                         str(position.get_lat()) + ", " +
                         str(position.get_lat()) + ", " +
-                        str(orientation.get_heading()) + ", " +
+                        str(orient.get_heading()) + ", " +
                         str(dof_br_list.get_bearing()) + ", " +
                         str(nmea_br_list.get_bearing()) + ", " +
                         str(coords_br_list.get_bearing()) + ", " +
