@@ -148,6 +148,7 @@ def display_stats(orient, position, obs, bearing, status):
                       true_heading=(orient.get_heading() + magvar+720) % 360))
         print("\nCurrent Bearing: {bear:7.2f}, "
               "Bearing Method: {method}".format(bear=bearing, method=status))
+        print("\nSubinterval: {subint}".format(subint=val))
     except:
         pass
 
@@ -292,7 +293,7 @@ with open(str(float(ephem.now()))+".csv", 'w') as f:
             try:
                 f.write(str(ephem.now()) + ", " +
                         str(position.get_lat()) + ", " +
-                        str(position.get_lat()) + ", " +
+                        str(position.get_lon()) + ", " +
                         str(orient.get_heading()) + ", " +
                         str(dof_br_list.get_bearing()) + ", " +
                         str(nmea_br_list.get_bearing()) + ", " +

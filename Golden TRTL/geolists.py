@@ -73,7 +73,7 @@ class CoordsList:
 
         x = (self.longs[0] - self.longs[1])
         y = (self.lats[0] - self.lats[1])
-        
+
         # Bearing in degrees East of North
         b = 90 - math.degrees(math.atan2(y, x))
 

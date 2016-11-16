@@ -13,7 +13,7 @@ processed_bearings = []  # Create the list of calculated bearings.
 with open('difftestdata.csv', 'r') as f:
     reader = csv.reader(f)
     space_list = list(reader)  # IMPORTANT: This list is full of strings!
-
+print(space_list)
 # Behold, my ultimate list comprehension to convert everything to float!
 space_list = [[float(y) for y in x] for x in space_list]
 
