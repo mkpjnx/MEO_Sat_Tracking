@@ -117,17 +117,17 @@ def read_message(port):
 def display_stats(orient, position, obs, bearing, status):
     """Print the current values to the console."""
     try:
-        print("\n"*65)
+        # print("\n"*65)
         magvar = get_magnetic_var(float(last_lat), float(last_lon))
-        print('''               _.:::::._
-             .:::'_|_':::.
-            /::' --|-- '::\\
-           |:" .---"---. ':|
-           |: (GLDN TRTL) :|
-           |:: `-------' ::|
-            \:::.......:::/
-             ':::::::::::'
-                `'"""'`\n\n''')
+        # print('''               _.:::::._
+        #      .:::'_|_':::.
+        #     /::' --|-- '::\\
+        #    |:" .---"---. ':|
+        #    |: (GLDN TRTL) :|
+        #    |:: `-------' ::|
+        #     \:::.......:::/
+        #      ':::::::::::'
+        #         `'"""'`\n\n''')
         print("Time: {}\n".format(ephem.now()))
 
         print('GPS\n===\nFix: {fix}, Lat: {lat}, Lon: {lon}'
