@@ -1,5 +1,6 @@
 """Main algorithm for bearing calculation."""
 
+import threading
 import time
 import ephem
 import serial
@@ -10,18 +11,15 @@ import geolists
 
 from geolists import rotate_check  # , drift_check
 
-import threading
-
 from geomag import geomag
 
-
 # Constants
-initial_az = 180
-initial_alt = 90
-min_elevation = 10.0  # Horizon for antenna
-sleep_time = 1.0
-unwind_threshold = 180
-sleep_on_unwind = 45.0
+INITIAL_AZ = 180
+INITIAL_ALT = 90
+MIN_ELEVATION = 10.0  # Horizon for antenna
+SLEEP_TIME = 1.0
+UNWIND_THRESHOLD = 180
+SLEEP_ON_UNWIND = 45.0
 
 last_lon = '-88.787'
 last_lat = '41.355'
@@ -32,7 +30,7 @@ mount_port = '/dev/ttyUSB0'
 mount_baud = 9600
 
 # arduino_port = '/dev/ttyACM0'
-arduino_port = 'COM5'
+arduino_port = 'COM4'
 arduino_baud = 115200
 
 
@@ -43,7 +41,7 @@ class SerialTester:
         """Print to terminal instead of writing to serial."""
         print(line)
 
-    def read(self, num):
+    def read(self):
         """Return nothing."""
         return
 
@@ -68,11 +66,11 @@ def update_gps(gprmc, obs):
             datetime = gprmc.get_date() + " " + gprmc.get_time()
             obsc.date = datetime
             obsc.lat = str(gprmc.get_lat())
-            last_lat = str(gprmc.get_lat())  # NOQA
+            last_lat = str(gprmc.get_lat())
             obsc.lon = str(gprmc.get_lon())
-            last_lon = str(gprmc.get_lon())  # NOQA
+            last_lon = str(gprmc.get_lon())
         return obsc
-    except:
+    except Exception:
         return obs
 
 
@@ -86,20 +84,20 @@ def setup_serial(port, baud):
 def setup_satellite():
     """Read in TLE for target satellite ICO F2."""
     icof2 = ephem.readtle(
-      'ICO F2',
-      '1 26857U 01026A   16172.60175106 -.00000043  00000-0  00000+0 0  9997',
-      '2 26857 044.9783   5.1953 0013193 227.2968 127.4685 03.92441898218058')
+        'ICO F2',
+        '1 26857U 01026A   16172.60175106 -.00000043  00000-0  00000+0 0  9997',
+        '2 26857 044.9783   5.1953 0013193 227.2968 127.4685 03.92441898218058')
     return icof2
 
 
 def get_sat_position(icof2, home):
     """Return the azimuth and altitude of the satellite."""
     icof2.compute(home)
-    az = icof2.az / ephem.degree
+    azi = icof2.az / ephem.degree
     alt = icof2.alt / ephem.degree
     print('Current Satellite Location: Azimuth %3.2f deg, Altitude %3.2f deg' %
-          (icof2_az, icof2_alt))
-    return az, alt
+          (icof2.az, icof2.alt))
+    return azi, alt
 
 
 def read_message(port):
@@ -107,7 +105,7 @@ def read_message(port):
     while True:
         try:
             line = port.readline().decode("ascii").replace('\r', '').replace(
-              '\n', '')
+                '\n', '')
         except:
             line = ""
         if len(line) > 0 and line[0] == "$":
@@ -149,7 +147,7 @@ def display_stats(orient, position, obs, bearing, status):
         print("\nCurrent Bearing: {bear:7.2f}, "
               "Bearing Method: {method}".format(bear=bearing, method=status))
         print("\nSubinterval: {subint}".format(subint=val))
-    except:
+    except Exception:
         pass
 
 
@@ -208,8 +206,8 @@ counter = time.time()
 coords_list = geolists.CoordsList(float(last_lat), float(last_lon))
 
 coords_br_list = geolists.BearingList(last_heading)  # GPS bearings
-dof_br_list = geolists.BearingList(orient.get_heading())  # DOF bearings
-nmea_br_list = geolists.BearingList(position.get_bearing())  # NMEA bearings
+# dof_br_list = geolists.BearingList(orient.get_heading())  # DOF bearings
+# nmea_br_list = geolists.BearingList(position.get_bearing())  # NMEA bearings
 
 
 class KeyListener(threading.Thread):
@@ -245,12 +243,12 @@ with open(str(float(ephem.now()))+".csv", 'w') as f:
         mes = (read_message(ard))
         if mes[:2] == "$G":
             try:
-                # print("GPS received")
+                print("GPS received")
                 position = nmea.NMEA(mes)
                 coords_list.add_coords(position.get_lat(), position.get_lon())
                 coords_br_list.add_bearing(coords_list.get_current_bearing())
-                nmea_br_list.add_bearing(position.get_bearing())
-                # print("GPS parsed")
+                # nmea_br_list.add_bearing(position.get_bearing())
+                print("GPS parsed")
             except Exception as e:
                 print("GPS ERROR: {0}".format(e))
         elif mes[:2] == "$I":
@@ -258,7 +256,7 @@ with open(str(float(ephem.now()))+".csv", 'w') as f:
                 # print("Orientation received")
                 orient = orientation.Orientation(mes)
                 corrected_heading = (orient.get_heading() + magvar + 720) % 360
-                dof_br_list.add_bearing(corrected_heading)
+                # dof_br_list.add_bearing(corrected_heading)
                 # print("Orientation parsed")
             except Exception as e:
                 print("ORIENTATION ERROR: {0}".format(e))
@@ -277,13 +275,13 @@ with open(str(float(ephem.now()))+".csv", 'w') as f:
         # print(len(dof_br_list.b), len(coords_br_list.b), len(nmea_br_list.b))
 
         # Decide on which method to use
-        if mag_cal > 0 and len(dof_br_list.b) > 1:
-            if rotate_check(dof_br_list, 2):
-                bearing = nmea_br_list.get_bearing()
-                method = "NMEA Bearing"
-            else:
-                bearing = dof_br_list.get_bearing()
-                method = "DOF Heading"
+        # if mag_cal > 0 and len(dof_br_list.b) > 1:
+        #     if rotate_check(dof_br_list, 2):
+        #         bearing = nmea_br_list.get_bearing()
+        #         method = "NMEA Bearing"
+        #     else:
+        #         bearing = dof_br_list.get_bearing()
+        #         method = "DOF Heading"
 
         # Print the stats
         display_stats(orient, position, home, bearing, method)
@@ -295,12 +293,12 @@ with open(str(float(ephem.now()))+".csv", 'w') as f:
                         str(position.get_lat()) + ", " +
                         str(position.get_lon()) + ", " +
                         str(orient.get_heading()) + ", " +
-                        str(dof_br_list.get_bearing()) + ", " +
-                        str(nmea_br_list.get_bearing()) + ", " +
+                        # str(dof_br_list.get_bearing()) + ", " +
+                        # str(nmea_br_list.get_bearing()) + ", " +
                         str(coords_br_list.get_bearing()) + ", " +
                         val+"\n")
-            except Exception as e:
-                print("WRITE ERROR: {0}".format(e))
+            except Exception as ex:
+                print("WRITE ERROR: {0}".format(ex))
                 f.write("ERROR\n")
         if ii == "q":
             break
