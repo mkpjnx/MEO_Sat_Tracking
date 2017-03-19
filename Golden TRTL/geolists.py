@@ -6,6 +6,8 @@ Includes differntial calculations, from the TRTL method.
 import math
 import nmea
 
+class UnchangedPointError(Exception):
+    pass
 
 class BearingList:
     """Object that stores bearing calculated from GPS position."""
@@ -55,7 +57,7 @@ class CoordsList:
         self.lats.insert(0, lat)
         self.longs.insert(0, lon)
 
-        if(len(self.lats) >= 10):
+        if len(self.lats) >= 10:
             self.lats.pop()
             self.longs.pop()
 
@@ -66,18 +68,21 @@ class CoordsList:
         """
         # Find length of one degree of latitude and longitude based on average
         # of two most recent latitudes
-        lat_len, lon_len = nmea.len_lat_lon((self.lats[0] + self.lats[1]) / 2)
+        # lat_len, lon_len = nmea.len_lat_lon((self.lats[0] + self.lats[1]) / 2)
 
         # x = (self.longs[0] - self.longs[1]) * lon_len
         # y = (self.lats[0] - self.lats[1]) * lat_len
 
-        x = (self.longs[0] - self.longs[1])
-        y = (self.lats[0] - self.lats[1])
+        if self.longs[0] == self.longs[1] or self.lats[0] == self.lats[1]:
+            raise UnchangedPointError("There is not enough difference between points.")
+        else:
+            x = (self.longs[0] - self.longs[1])
+            y = (self.lats[0] - self.lats[1])
 
-        # Bearing in degrees East of North
-        b = 90 - math.degrees(math.atan2(y, x))
+            # Bearing in degrees East of North
+            b = 90 - math.degrees(math.atan2(y, x))
 
-        return b % 360
+            return b % 360
 
     def lock(self):
         """Add the same coords to the list."""
