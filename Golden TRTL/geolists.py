@@ -1,44 +1,45 @@
 """Classes for lists of coordinates.
 
-Includes differntial calculations, from the TRTL method.
+Includes differential calculations, from the TRTL method.
 """
 
 import math
-import nmea
+from geodesy import distance_lat_lon
 
 class UnchangedPointError(Exception):
+    """Consecutive GPS points are too similar."""
     pass
 
 class BearingList:
     """Object that stores bearing calculated from GPS position."""
 
-    def __init__(self, bear):
+    def __init__(self, bearing):
         """Constructor."""
-        self.b = [bear]
+        self.bearings = [bearing]
 
     def add_bearing(self, bearing):
         """Insert a bearing at the beginning of the list."""
-        self.b.insert(0, bearing)
+        self.bearings.insert(0, bearing)
 
-        if len(self.b) > 10:
-            self.b.pop()
+        if len(self.bearings) > 10:
+            self.bearings.pop()
 
     def get_bearing(self):
         """Return the first bearing in the list."""
-        return self.b[0]
+        return self.bearings[0]
 
     # This stuff is for drift (maybe, we'll see how it goes)
     def delta_bearing(self):
         """Find the change in the most recent bearings."""
-        return self.b[0] - self.b[1]
+        return self.bearings[0] - self.bearings[1]
 
     def lock(self):
         """Add the same bearing to the list."""
-        self.add_bearing(self.b[0])
+        self.add_bearing(self.bearings[0])
 
     def adjust_bearing(self, delta):
         """Add delta to a bearing."""
-        self.add_bearing((self.b[0] + delta) % 360)
+        self.add_bearing((self.bearings[0] + delta) % 360)
 
 
 class CoordsList:
@@ -76,13 +77,13 @@ class CoordsList:
         if self.longs[0] == self.longs[1] or self.lats[0] == self.lats[1]:
             raise UnchangedPointError("There is not enough difference between points.")
         else:
-            x = (self.longs[0] - self.longs[1])
-            y = (self.lats[0] - self.lats[1])
+            x_coord = (self.longs[0] - self.longs[1])
+            y_coord = (self.lats[0] - self.lats[1])
 
             # Bearing in degrees East of North
-            b = 90 - math.degrees(math.atan2(y, x))
+            bearing = 90 - math.degrees(math.atan2(y_coord, x_coord))
 
-            return b % 360
+            return bearing % 360
 
     def lock(self):
         """Add the same coords to the list."""
@@ -90,12 +91,7 @@ class CoordsList:
 
     def get_dist_travelled(self):
         """Return distance between two most recent points."""
-        latlen, lonlen = nmea.len_lat_lon((self.lats[0] + self.lats[1]) / 2)
-        x = (self.longs[0] - self.longs[1]) * lonlen
-        y = (self.lats[0] - self.lats[1]) * latlen
-
-        d = ((x * x) + (y * y)) ** .5
-        return d
+        return distance_lat_lon(self.lats[1], self.longs[1], self.lats[0], self.longs[0])
 
 
 def drift_check(coords, calc_bearings, dof_bearings, threshold):

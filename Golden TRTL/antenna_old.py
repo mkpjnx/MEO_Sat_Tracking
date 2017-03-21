@@ -1,5 +1,5 @@
 import time
-import serial
+from serial import Serial
 import sys
 
 
@@ -61,4 +61,4 @@ class Antenna:
                 print('Tracking Mode')
                 self.set_position(az, alt)
         else:
-            antenna.park()
+            self.park()

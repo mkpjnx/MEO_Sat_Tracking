@@ -4,7 +4,7 @@
 class Orientation:
     """Class to hold the information of the 9-DOF sensor."""
 
-    def __init__(self, sentence):
+    def __init__(self, sentence: str="$IMU,0,0,0,0,0,0,0,0,0"):
         """Initialize with the unparsed sentence."""
         self.unparsed = sentence
         self.info = sentence.split(',')

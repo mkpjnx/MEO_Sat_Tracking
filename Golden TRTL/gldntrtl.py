@@ -82,12 +82,12 @@ def setup_serial(port, baud):
 
 
 def setup_satellite():
-    """Read in TLE for target satellite ICO F2."""
-    icof2 = ephem.readtle(
+    """Get the Body for the target satellite ICO F2 from its TLE."""
+    ico_f2 = ephem.readtle(
         'ICO F2',
         '1 26857U 01026A   16172.60175106 -.00000043  00000-0  00000+0 0  9997',
         '2 26857 044.9783   5.1953 0013193 227.2968 127.4685 03.92441898218058')
-    return icof2
+    return ico_f2
 
 
 def get_sat_position(icof2, home):
