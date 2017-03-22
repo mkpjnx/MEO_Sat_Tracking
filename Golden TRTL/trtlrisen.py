@@ -5,11 +5,7 @@ import serial
 import sentences
 import geolists
 
-ARDUINO_PORT = 'COM4'
-ARDUINO_BAUD = 115200
-ARDUINO = setup_serial(ARDUINO_PORT, ARDUINO_BAUD)
-
-def setup_serial(port: str, baud: int) -> None:
+def setup_serial(port: str, baud: int) -> serial.Serial:
     """Create the Serial object."""
     ser = serial.Serial(port, baud)
     print("Port used:" + ser.name)
@@ -25,19 +21,38 @@ def read_message(serial_port: serial.Serial) -> str:
         if len(line) > 0 and line[0] == "$":
             return line
 
+def display_stats(position_nmea: sentences.NMEA, gain_adc: sentences.ADC, bearing_list) -> None:
+    """Display the current GPS and heading data."""
+    print('GPS\n===\nFix: {fix}, Lat: {lat}, Lon: {lon}'
+          .format(fix=position_nmea.is_fixed(),
+                  lat=position_nmea.get_lat(),
+                  lon=position_nmea.get_lon()))
+    print(position_nmea.unparsed)
+    print("===\nCurrent Gain: {gain:7.2f}".format(gain=gain_adc.get_gain()))
+    print("===\nCurrent Bearing: {bear:7.2f}".format(bear=bearing_list.get_bearing()))
+
+ARDUINO_PORT = 'COM4'
+ARDUINO_BAUD = 115200
+UPDATE_RATE = 5.0
+ARDUINO = setup_serial(ARDUINO_PORT, ARDUINO_BAUD)
+INITIAL_LAT = 0
+INITIAL_LON = 0
+INITIAL_HEADING = 0
+DISTANCE_THRESHOLD = 1
+
 class AlgorithmThread(Thread):
     """The algorithm wrapped in a thread."""
     def __init__(self):
         """Inherit thread properties."""
         Thread.__init__(self)
-        self.data = {"heading": 0, "lon": 0, "lat": 0, "gain": 0}
+        self.data = {"heading": INITIAL_HEADING, "lat": INITIAL_LAT, "lon": INITIAL_LON, "gain": 0}
     def run(self) -> None:
         """Main heading determination algorithm."""
         position = sentences.NMEA()
         gain_sentence = sentences.ADC()
 
-        coords_list = geolists.CoordsList(0, 0)
-        bearing_list = geolists.BearingList(0)
+        coords_list = geolists.CoordsList(INITIAL_LAT, INITIAL_LON)
+        bearing_list = geolists.BearingList(INITIAL_HEADING)
 
         last_time = time.time()
 
@@ -51,7 +66,8 @@ class AlgorithmThread(Thread):
                 if sentence[:2] == "$G":
                     try:
                         position = sentences.NMEA(sentence)
-                        if position.is_fixed() and position.get_speed() > 1:
+                        travelled_distance = coords_list.get_dist_travelled()
+                        if position.is_fixed() and travelled_distance > DISTANCE_THRESHOLD:
                             coords_list.add_coords(position.get_lat(), position.get_lon())
                             bearing_list.add_bearing(coords_list.get_current_bearing())
                         else:
@@ -66,15 +82,16 @@ class AlgorithmThread(Thread):
 
                 lat = str(position.get_lat())
                 lon = str(position.get_lon())
-                # heading = str(orientation.get_heading())
                 gain = gain_sentence.get_gain()
                 bearing = str(bearing_list.get_bearing())
 
+                display_stats(position, gain_sentence, bearing_list)
 
-                if time.time() - last_time >= 1.0:
+                if time.time() - last_time >= UPDATE_RATE:
                     last_time = time.time()
-                    log.write(", ".join([str(x) for x in [lat, lon, bearing, gain]]) + "\n")
-                    self.data = {"heading": bearing, "lon": lon, "lat": lat, "gain": gain}
+                    # log.write(", ".join(
+                    #     [str(x) for x in [last_time, lat, lon, bearing, gain]]) + "\n")
+                    self.data = {"heading": bearing, "lat": lat, "lon": lon, "gain": gain}
 
 TRTL = AlgorithmThread()
 TRTL.start()
