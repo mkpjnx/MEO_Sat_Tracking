@@ -47,8 +47,8 @@ class CoordsList:
 
     def __init__(self, lat, lon):
         """Constructor."""
-        self.lats = [lat]
-        self.longs = [lon]
+        self.lats = [lat, lat]
+        self.longs = [lon, lon]
 
     def add_coords(self, lat, lon):
         """Add new coords to beginning of list and.

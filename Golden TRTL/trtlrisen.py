@@ -31,7 +31,7 @@ def display_stats(position_nmea: sentences.NMEA, gain_adc: sentences.ADC, bearin
     print("===\nCurrent Gain: {gain:7.2f}".format(gain=gain_adc.get_gain()))
     print("===\nCurrent Bearing: {bear:7.2f}".format(bear=bearing_list.get_bearing()))
 
-ARDUINO_PORT = 'COM4'
+ARDUINO_PORT = 'COM3'
 ARDUINO_BAUD = 115200
 UPDATE_RATE = 5.0
 ARDUINO = setup_serial(ARDUINO_PORT, ARDUINO_BAUD)
@@ -58,7 +58,7 @@ class AlgorithmThread(Thread):
 
         time_string = time.strftime("%d-%m-%Y_%H-%M-%S", time.localtime())
 
-        with open(time_string + ".csv") as log:
+        with open(time_string + ".csv", "w") as log:
             log.write("Time, Lat, Lon, Heading, Diffbearing\n")
 
             while True:
@@ -66,8 +66,8 @@ class AlgorithmThread(Thread):
                 if sentence[:2] == "$G":
                     try:
                         position = sentences.NMEA(sentence)
-                        travelled_distance = coords_list.get_dist_travelled()
-                        if position.is_fixed() and travelled_distance > DISTANCE_THRESHOLD:
+                        # travelled_distance = coords_list.get_dist_travelled()
+                        if position.is_fixed():
                             coords_list.add_coords(position.get_lat(), position.get_lon())
                             bearing_list.add_bearing(coords_list.get_current_bearing())
                         else:
@@ -92,6 +92,6 @@ class AlgorithmThread(Thread):
                     # log.write(", ".join(
                     #     [str(x) for x in [last_time, lat, lon, bearing, gain]]) + "\n")
                     self.data = {"heading": bearing, "lat": lat, "lon": lon, "gain": gain}
-
+                    # print(self.data)
 TRTL = AlgorithmThread()
 TRTL.start()
